@@ -1,4 +1,23 @@
-{
-  "bucket": "docusmart-sinistros",
-  "key": "samples/documents/boletim-ocorrencia.pdf"
-}
+﻿[
+  {
+    "descricao": "Teste com Boletim de Ocorrência (PDF)",
+    "payload": {
+      "bucket": "docusmart-sinistros",
+      "key": "uploads/boletim-ocorrencia.pdf"
+    }
+  },
+  {
+    "descricao": "Teste com Nota Fiscal (PDF)",
+    "payload": {
+      "bucket": "docusmart-sinistros",
+      "key": "uploads/nota-fiscal.pdf"
+    }
+  },
+  {
+    "descricao": "Teste com foto de veículo (JPG)",
+    "payload": {
+      "bucket": "docusmart-sinistros",
+      "key": "uploads/foto-veiculo.jpg"
+    }
+  }
+]

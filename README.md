@@ -1,138 +1,152 @@
-# 🤖 DocuSmart — Motor de Análise Documental (Strands SDK)
+﻿# 🤖 Motor de Análise Documental — DocuSmart Intelligence
 
 **Responsável:** Guilherme Barreto
-**Papel no Hackathon:** Arquiteto IA / Backend (Motor de Extração)
-**Contexto:** Este repositório contém o "Motor" do projeto DocuSmart Intelligence do Hack2Hire 2026 — Escola da Nuvem.
+**Projeto:** Hack2Hire 2026 — Escola da Nuvem + AWS
+**Papel:** Motor Strands — núcleo do pipeline IDP do Case B
 
 ---
 
-## O que é isso?
+## O que este motor faz
 
-Este módulo é responsável pelo núcleo de inteligência do pipeline IDP (Case B).
-Ele recebe um documento PDF armazenado no Amazon S3, processa com IA (Textract + Bedrock via Strands SDK) e devolve um JSON estruturado com os dados do sinistro.
-
-**O time consome a API deste módulo. Não precisa entender como ele funciona por dentro.**
-
----
+Recebe um arquivo (PDF ou imagem) armazenado no S3 e devolve um JSON estruturado com:
+- Tipo do documento classificado
+- Campos extraídos (data, local, valor, envolvidos)
+- Resumo em 2 frases
+- Score de confiança
+- Trilha de auditoria completa por etapa no DynamoDB
 
 ## Arquitetura do Motor
 
 ```
-[PDF no S3]
-     │
-     ▼
-[API Gateway POST /analisar-sinistro]
-     │
-     ▼
-[Lambda Python 3.12 + Strands SDK Layer]
-     │
-     ├── Tool 1: Amazon Textract  → OCR, extrai o texto do PDF
-     ├── Tool 2: Amazon Bedrock   → Classifica e resume o documento
-     └── Tool 3: Amazon DynamoDB  → Salva o resultado estruturado
-     │
-     ▼
-[JSON padronizado de resposta]
+POST { bucket, key }
+        ↓
+    API Gateway
+        ↓
+    Lambda (Strands Agent — Claude 3 Haiku)
+        ↓
+    PDF/doc?  → Textract (OCR) → Comprehend (NER pt-BR)
+    Imagem?   → Rekognition (labels + danos)
+        ↓
+    Bedrock sintetiza → JSON final
+        ↓
+    DynamoDB salva resultado + auditoria por etapa
+        ↓
+    HTTP 200 + JSON
 ```
 
----
+## Serviços AWS utilizados
 
-## Como usar (para o time)
+| Serviço | Função |
+|---------|--------|
+| Amazon Textract | OCR — extrai texto de documentos |
+| Amazon Comprehend | NER em português — datas, nomes, valores |
+| Amazon Rekognition | Análise visual de imagens e danos |
+| Amazon Bedrock (Claude 3 Haiku) | LLM — síntese e classificação final |
+| Amazon DynamoDB | Persistência + auditoria por etapa |
+| AWS Lambda + Strands SDK | Orquestração do agente |
+
+## Como usar
 
 ### Endpoint
-```
-POST /analisar-sinistro
-Content-Type: application/json
-```
+`POST /analisar-sinistro`
 
 ### Payload de entrada
 ```json
 {
   "bucket": "docusmart-sinistros",
-  "key": "uploads/boletim-ocorrencia.pdf"
+  "key": "uploads/boletim-001.pdf"
 }
 ```
 
-### Resposta de sucesso (200)
+### Resposta (200 OK)
 ```json
 {
-  "id": "7f3a91bc-e2a1-4c9d-a832-...",
+  "id": "uuid-gerado",
+  "sinistro_id": "uuid-do-sinistro",
   "tipo_documento": "Boletim de Ocorrência",
-  "confianca": 0.91,
-  "resumo": "Acidente de trânsito na Av. Paulista em 10/06/2025, envolvendo dois veículos. Sem vítimas.",
+  "confianca": 0.94,
+  "resumo": "Acidente de trânsito na Av. Paulista em 10/06/2025. Sem vítimas registradas.",
   "campos_extraidos": {
     "data": "10/06/2025",
     "local": "Av. Paulista, 1000",
     "valor_prejuizo": "R$ 4.500,00",
     "envolvidos": ["João Silva", "Maria Souza"]
   },
-  "processado_em": "2026-06-17T14:23:00Z"
+  "processado_em": "2026-06-17T14:23:00Z",
+  "s3_origem": { "bucket": "docusmart-sinistros", "key": "uploads/boletim-001.pdf" }
 }
 ```
 
-### Teste rápido com curl
-```bash
-curl -X POST https://<sua-api>.execute-api.us-east-1.amazonaws.com/prod/analisar-sinistro \
-  -H "Content-Type: application/json" \
-  -d '{"bucket": "docusmart-sinistros", "key": "samples/documents/boletim-ocorrencia.pdf"}'
-```
-
----
+### Erros
+| Código | error_code | Causa |
+|--------|------------|-------|
+| 400 | MISSING_PARAMS | Faltou bucket ou key no body |
+| 502 | AGENT_FAILED | Erro interno no agente |
 
 ## Configuração da Lambda
 
-### Runtime
-- **Python:** 3.12
-- **Arquitetura:** x86_64
-- **Timeout:** 60 segundos (mínimo)
+| Parâmetro | Valor |
+|-----------|-------|
+| Runtime | Python 3.12 |
+| Timeout | 60s (mínimo) |
+| Memory | 512 MB |
+| Layer | `arn:aws:lambda:us-east-1:856699698935:layer:strands-agents-py3_12-x86_64:2` |
 
-### Lambda Layer (Strands SDK — obrigatório)
+### Variáveis de ambiente
 ```
-arn:aws:lambda:us-east-1:856699698935:layer:strands-agents-py3_12-x86_64:2
+AWS_REGION_NAME=us-east-1
+DYNAMO_TABLE_NAME=sinistros-resultados
+DOCUMENTS_BUCKET=docusmart-sinistros
 ```
 
-### Variáveis de Ambiente
-| Variável | Valor |
-|---|---|
-| `AWS_REGION_NAME` | `us-east-1` |
-| `DYNAMO_TABLE_NAME` | `sinistros-resultados` |
-| `DOCUMENTS_BUCKET` | `docusmart-sinistros` |
+### IAM (Execution Role)
+```
+AmazonTextractFullAccess
+AmazonComprehendReadOnly
+AmazonRekognitionReadOnlyAccess
+AmazonBedrockFullAccess
+AmazonDynamoDBFullAccess
+AmazonS3ReadOnlyAccess
+```
 
-### Permissões IAM (Execution Role)
-- `AmazonTextractFullAccess`
-- `AmazonDynamoDBFullAccess`
-- `AmazonS3ReadOnlyAccess`
-- `AmazonBedrockFullAccess`
+## Teste rápido
 
----
+```bash
+# Testar via curl (com API Gateway configurado)
+curl -X POST https://<API_ID>.execute-api.us-east-1.amazonaws.com/prod/analisar-sinistro \
+  -H "Content-Type: application/json" \
+  -d '{"bucket": "docusmart-sinistros", "key": "uploads/boletim-teste.pdf"}'
+```
 
-## Estrutura do repositório
+## Estrutura do projeto
 
 ```
 docusmart-motor-strands/
 ├── lambda/
-│   └── lambda_function.py   ← Código principal da Lambda
-├── samples/
-│   └── documents/           ← PDFs de teste (B.O., Nota Fiscal, etc.)
+│   └── lambda_function.py    ← Código principal (6 tools + handler)
+├── samples/                  ← PDFs de teste (não comitar dados reais)
 ├── tests/
-│   └── test_payload.json    ← Payload para testar no Console/Postman
-├── docs/                    ← Documentação adicional
-├── .env.example             ← Variáveis de ambiente necessárias
-└── README.md                ← Este arquivo
+│   └── test_payload.json     ← Payload para testar no Console AWS
+├── .env.example              ← Variáveis de ambiente necessárias
+└── README.md
 ```
 
+## Integração com o time
+
+O Step Functions do time chama esta Lambda na etapa `AnalisarDocumento`:
+
+```json
+{
+  "Resource": "arn:aws:lambda:us-east-1:ACCOUNT:function:docusmart-motor",
+  "Parameters": {
+    "bucket.$": "$.bucket",
+    "key.$": "$.key"
+  }
+}
+```
+
+O JSON retornado alimenta o Agente SAC (Papel 4) via DynamoDB.
+
 ---
 
-## Custo AWS estimado (hackathon inteiro)
-
-| Serviço | Uso | Custo |
-|---|---|---|
-| Amazon Textract | ~50 páginas | < US$ 2,00 |
-| Amazon Bedrock (Nova Pro) | ~100 invocações | < US$ 3,00 |
-| AWS Lambda + API Gateway | Baixo volume | < US$ 0,50 |
-| Amazon S3 + DynamoDB | Mínimo | < US$ 0,50 |
-| **Strands SDK** | Framework Python | **US$ 0,00** |
-| **TOTAL** | | **< US$ 6,00** |
-
----
-
-*Hack2Hire 2026 — Escola da Nuvem | Guilherme Barreto*
+*Hack2Hire 2026 — Escola da Nuvem + AWS | Guilherme Barreto*
