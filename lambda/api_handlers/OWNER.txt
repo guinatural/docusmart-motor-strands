@@ -1,0 +1,33 @@
+﻿# 🌐 API Handlers — API Gateway REST
+# =====================================
+# RESPONSÁVEL: Papel 3 — Jhonny
+# STATUS: ⏳ PENDENTE — implementar até 18/06
+#
+# O QUE ESTE MÓDULO PRECISA ENTREGAR:
+#   4 endpoints obrigatórios (exigidos pelo Case B):
+#
+#   POST   /upload-sinistro          → recebe arquivo, salva no S3
+#   POST   /analisar-sinistro        → chama Lambda process_document
+#   GET    /sinistro/{id}            → consulta resultado no DynamoDB
+#   PUT    /sinistro/{id}            → atualiza campos no DynamoDB
+#   DELETE /sinistro/{id}            → remove do S3 + DynamoDB (LGPD)
+#   POST   /assistente/pergunta      → chama Agente SAC (agent_handler)
+#
+# INTEGRAÇÃO COM O MOTOR (process_document):
+#   O endpoint POST /analisar-sinistro deve chamar a Lambda do Guilherme assim:
+#
+#   import boto3, json
+#   lambda_client = boto3.client("lambda")
+#   response = lambda_client.invoke(
+#       FunctionName="docusmart-motor-strands-process-document",
+#       Payload=json.dumps({"bucket": bucket, "key": key})
+#   )
+#
+# STEP FUNCTIONS (integração alternativa):
+#   O Step Functions pode chamar o motor diretamente como task:
+#   "Resource": "arn:aws:lambda:...:function:docusmart-motor-process-document"
+#   "Parameters": { "bucket.$": "$.bucket", "key.$": "$.key" }
+#
+# REFERÊNCIA:
+#   Case B — Seção 7 (MVP): "Endpoints GET, PUT, DELETE, POST funcionais"
+#   Estrutura sugerida: lambda/api_handlers/{get,post,put,delete}_document.py

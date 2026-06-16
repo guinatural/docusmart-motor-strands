@@ -1,10 +1,18 @@
+﻿# Ambiente Python
 .env
 __pycache__/
 *.pyc
 *.pyo
 .venv/
+
+# Documentos reais (nunca commitar dados de clientes)
 *.pdf
 *.jpg
 *.jpeg
 *.png
 !samples/.gitkeep
+!samples/documents/.gitkeep
+
+# IDEs
+.vscode/
+.idea/

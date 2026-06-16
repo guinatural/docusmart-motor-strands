@@ -1,0 +1,9 @@
+﻿# 🤖 Agente SAC — Bedrock Converse
+# ==================================
+# RESPONSÁVEL: Papel 4 — Wanderson
+# STATUS: ⏳ PENDENTE
+#
+# Este módulo implementa o Agente de IA Generativa do Case B.
+# É o diferencial mais importante para a avaliação da banca.
+#
+# Ver agent_handler.py para as instruções completas de implementação.

@@ -1,0 +1,33 @@
+﻿# 🤖 Motor de Análise Documental — Strands Agent
+# ================================================
+# RESPONSÁVEL: Guilherme Barreto
+# STATUS: ✅ IMPLEMENTADO (v3 — commit 424d56f)
+#
+# O QUE ESTE MÓDULO FAZ:
+#   Recebe { bucket, key } e retorna JSON estruturado com:
+#   - tipo_documento classificado
+#   - campos_extraidos (data, local, valor, envolvidos)
+#   - resumo em 2 frases
+#   - confianca (0 a 1)
+#   - trilha de auditoria por etapa no DynamoDB
+#
+# COMO CHAMAR (integração com Step Functions):
+#   POST /analisar-sinistro
+#   Body: { "bucket": "docusmart-sinistros", "key": "uploads/doc.pdf" }
+#
+# TOOLS IMPLEMENTADAS:
+#   Tool 1: extrair_texto_documento   — Amazon Textract (OCR)
+#   Tool 2: extrair_entidades_texto   — Amazon Comprehend (NER pt-BR)
+#   Tool 3: analisar_imagem_veiculo   — Amazon Rekognition (labels)
+#   Tool 4: (interno)                 — Amazon Bedrock Claude 3 Haiku (síntese)
+#   Tool 5: salvar_resultado_dynamodb — Amazon DynamoDB (resultado final)
+#   Tool 6: registrar_auditoria       — Amazon DynamoDB (trilha por etapa)
+#
+# DEPENDÊNCIAS:
+#   Layer Strands: arn:aws:lambda:us-east-1:856699698935:layer:strands-agents-py3_12-x86_64:2
+#   Env vars: AWS_REGION_NAME, DYNAMO_TABLE_NAME, DOCUMENTS_BUCKET
+#
+# PARA O TIME:
+#   O Step Functions chama esta Lambda na task "AnalisarDocumento".
+#   Ela não depende de nenhuma outra Lambda do projeto — funciona de forma isolada.
+#   O resultado fica no DynamoDB, tabela sinistros-resultados.

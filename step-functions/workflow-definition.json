@@ -1,0 +1,36 @@
+﻿{
+  "_comentario": "RESPONSÁVEL: Papel 3 — Jhonny | STATUS: ⏳ PENDENTE — implementar até 19/06",
+  "_instrucoes": [
+    "Criar um workflow com pelo menos 3 estados:",
+    "  Estado 1: ReceberDocumento — valida input",
+    "  Estado 2: AnalisarDocumento — invoca Lambda process_document do Guilherme",
+    "  Estado 3: RegistrarResultado — confirma salvamento no DynamoDB",
+    "A chamada ao motor do Guilherme fica no Estado 2.",
+    "Referência: Case B — Pipeline de Serviços AWS (Seção 4)"
+  ],
+  "Comment": "DocuSmart Intelligence — Workflow IDP",
+  "StartAt": "ReceberDocumento",
+  "States": {
+    "ReceberDocumento": {
+      "Type": "Pass",
+      "Comment": "TODO: Jhonny — validar bucket e key do input",
+      "Next": "AnalisarDocumento"
+    },
+    "AnalisarDocumento": {
+      "Type": "Task",
+      "Comment": "Chama o Motor Strands do Guilherme",
+      "Resource": "arn:aws:lambda:us-east-1:SUBSTITUIR_ACCOUNT_ID:function:docusmart-process-document",
+      "Parameters": {
+        "bucket.$": "$.bucket",
+        "key.$": "$.key"
+      },
+      "ResultPath": "$.resultado_analise",
+      "Next": "RegistrarResultado"
+    },
+    "RegistrarResultado": {
+      "Type": "Pass",
+      "Comment": "TODO: Jhonny — notificar sucesso ou acionar revisão humana se confianca < 0.8",
+      "End": true
+    }
+  }
+}

@@ -1,0 +1,33 @@
+﻿# frontend/OWNER.txt
+# ===================
+# RESPONSÁVEL: Papel 5 — Victor G. Silva
+# STATUS: ⏳ PENDENTE — implementar dias 19-21/06
+#
+# O QUE ESTE MÓDULO PRECISA ENTREGAR:
+#
+# Interface web com duas funcionalidades principais:
+#
+# 1. UPLOAD DE DOCUMENTOS
+#    - Formulário para selecionar arquivo (PDF ou imagem)
+#    - Campo para informar o sinistro_id (ou gerar automaticamente)
+#    - Botão "Analisar"
+#    - Exibir o JSON retornado de forma visual (tipo, campos, resumo, confiança)
+#
+# 2. CHAT COM O AGENTE SAC
+#    - Campo de texto para perguntas
+#    - Exibir resposta do agente
+#    - Histórico da conversa
+#
+# TECNOLOGIA SUGERIDA:
+#    Streamlit (Python) — mais rápido para hackathon
+#    Alternativa: HTML/JS puro com fetch para a API
+#
+# APIs DISPONÍVEIS (fornecidas pelo Papel 3 — Jhonny):
+#    POST /analisar-sinistro   → processa documento
+#    GET  /sinistro/{id}       → consulta resultado
+#    POST /assistente/pergunta → chat com o agente
+#
+# MÍNIMO PARA A DEMO (dia 22/23):
+#    - Upload de 1 PDF → JSON na tela
+#    - 1 pergunta ao agente → resposta na tela
+#    - Interface funcionando (não precisa ser bonita, precisa funcionar)

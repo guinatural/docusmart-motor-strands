@@ -1,94 +1,100 @@
-﻿# 🤖 Motor de Análise Documental — DocuSmart Intelligence
+﻿# 🏢 DocuSmart Intelligence — Hack2Hire 2026
 
-**Responsável:** Guilherme Barreto
-**Projeto:** Hack2Hire 2026 — Escola da Nuvem + AWS
-**Papel:** Motor Strands — núcleo do pipeline IDP do Case B
+**Escola da Nuvem + AWS | Case B — IDP com AWS AI Services + Agente GenAI**
 
 ---
 
-## O que este motor faz
-
-Recebe um arquivo (PDF ou imagem) armazenado no S3 e devolve um JSON estruturado com:
-- Tipo do documento classificado
-- Campos extraídos (data, local, valor, envolvidos)
-- Resumo em 2 frases
-- Score de confiança
-- Trilha de auditoria completa por etapa no DynamoDB
-
-## Arquitetura do Motor
+## 🗺️ Mapa do Projeto
 
 ```
-POST { bucket, key }
-        ↓
-    API Gateway
-        ↓
-    Lambda (Strands Agent — Claude 3 Haiku)
-        ↓
-    PDF/doc?  → Textract (OCR) → Comprehend (NER pt-BR)
-    Imagem?   → Rekognition (labels + danos)
-        ↓
-    Bedrock sintetiza → JSON final
-        ↓
-    DynamoDB salva resultado + auditoria por etapa
-        ↓
-    HTTP 200 + JSON
+┌─────────────────────────────────────────────────────────────────────────┐
+│  DOCUSMART INTELLIGENCE                                                 │
+│                                                                         │
+│  Cliente / Analista                                                     │
+│        ↓                                                                │
+│  API Gateway ────────────────────────── [Papel 3 — Jhonny]             │
+│        ↓                                                                │
+│  Step Functions ─────────────────────── [Papel 3 — Jhonny]             │
+│        ↓                                                                │
+│ ╔══════════════════════════════════════╗                               │
+│ ║  ⭐ MOTOR STRANDS                   ║ ← [Papel 1 — GUILHERME]       │
+│ ║  lambda/process_document/           ║                               │
+│ ║  Textract → Comprehend → Rekognition ║                               │
+│ ║  → Bedrock (Claude 3 Haiku)         ║                               │
+│ ║  → DynamoDB (resultado + auditoria) ║                               │
+│ ╚══════════════════════════════════════╝                               │
+│        ↓                                                                │
+│  DynamoDB ───────────────────────────── [Papel 2 — Jeanne/Jonny]       │
+│        ↓                                                                │
+│  Agente SAC ─────────────────────────── [Papel 4 — Wanderson]          │
+│  (Bedrock + S3 Vectors)                                                 │
+│        ↓                                                                │
+│  Frontend ───────────────────────────── [Papel 5 — Victor]             │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Serviços AWS utilizados
+---
 
-| Serviço | Função |
-|---------|--------|
-| Amazon Textract | OCR — extrai texto de documentos |
-| Amazon Comprehend | NER em português — datas, nomes, valores |
-| Amazon Rekognition | Análise visual de imagens e danos |
-| Amazon Bedrock (Claude 3 Haiku) | LLM — síntese e classificação final |
-| Amazon DynamoDB | Persistência + auditoria por etapa |
-| AWS Lambda + Strands SDK | Orquestração do agente |
+## 📁 Estrutura de Pastas e Responsáveis
 
-## Como usar
+| Pasta | Responsável | Status |
+|-------|-------------|--------|
+| `lambda/process_document/` | ⭐ **Guilherme Barreto** | ✅ Implementado |
+| `lambda/api_handlers/` | Papel 3 — Jhonny | ⏳ Pendente |
+| `lambda/agent_handler/` | Papel 4 — Wanderson | ⏳ Pendente |
+| `step-functions/` | Papel 3 — Jhonny | ⏳ Pendente |
+| `infrastructure/` | Papel 2 — Jeanne/Jonny | ⏳ Pendente |
+| `frontend/` | Papel 5 — Victor | ⏳ Pendente |
+| `samples/documents/` | Todos | Adicionar PDFs de teste |
 
-### Endpoint
-`POST /analisar-sinistro`
+> **Cada pasta tem um arquivo `OWNER.txt`** com as instruções detalhadas de implementação.
 
-### Payload de entrada
+---
+
+## ⭐ Motor de Análise (Guilherme) — Como funciona
+
+```
+POST /analisar-sinistro
+Body: { "bucket": "docusmart-sinistros", "key": "uploads/doc.pdf" }
+
+↓
+
+Lambda (Strands Agent — Claude 3 Haiku)
+  ├── Tool 1: Textract → extrai texto
+  ├── Tool 2: Comprehend → extrai entidades (pt-BR)
+  ├── Tool 3: Rekognition → analisa imagens
+  ├── Tool 6: DynamoDB → auditoria por etapa
+  └── Tool 5: DynamoDB → salva resultado final
+
+↓
+
+HTTP 200 + JSON estruturado
+```
+
+**Resposta:**
 ```json
 {
-  "bucket": "docusmart-sinistros",
-  "key": "uploads/boletim-001.pdf"
-}
-```
-
-### Resposta (200 OK)
-```json
-{
-  "id": "uuid-gerado",
-  "sinistro_id": "uuid-do-sinistro",
+  "id": "uuid",
+  "sinistro_id": "uuid",
   "tipo_documento": "Boletim de Ocorrência",
   "confianca": 0.94,
-  "resumo": "Acidente de trânsito na Av. Paulista em 10/06/2025. Sem vítimas registradas.",
-  "campos_extraidos": {
-    "data": "10/06/2025",
-    "local": "Av. Paulista, 1000",
-    "valor_prejuizo": "R$ 4.500,00",
-    "envolvidos": ["João Silva", "Maria Souza"]
-  },
-  "processado_em": "2026-06-17T14:23:00Z",
-  "s3_origem": { "bucket": "docusmart-sinistros", "key": "uploads/boletim-001.pdf" }
+  "resumo": "Acidente na Av. Paulista. Sem vítimas.",
+  "campos_extraidos": { "data": "...", "local": "...", "valor_prejuizo": "..." },
+  "processado_em": "2026-06-17T14:23:00Z"
 }
 ```
 
-### Erros
-| Código | error_code | Causa |
-|--------|------------|-------|
-| 400 | MISSING_PARAMS | Faltou bucket ou key no body |
-| 502 | AGENT_FAILED | Erro interno no agente |
+---
 
-## Configuração da Lambda
+## 🚀 Como executar o motor (Guilherme)
+
+### Configuração da Lambda
 
 | Parâmetro | Valor |
 |-----------|-------|
 | Runtime | Python 3.12 |
-| Timeout | 60s (mínimo) |
+| Handler | `lambda_function.lambda_handler` |
+| Timeout | 60s |
 | Memory | 512 MB |
 | Layer | `arn:aws:lambda:us-east-1:856699698935:layer:strands-agents-py3_12-x86_64:2` |
 
@@ -99,7 +105,7 @@ DYNAMO_TABLE_NAME=sinistros-resultados
 DOCUMENTS_BUCKET=docusmart-sinistros
 ```
 
-### IAM (Execution Role)
+### Permissões IAM (Execution Role)
 ```
 AmazonTextractFullAccess
 AmazonComprehendReadOnly
@@ -109,44 +115,35 @@ AmazonDynamoDBFullAccess
 AmazonS3ReadOnlyAccess
 ```
 
-## Teste rápido
-
-```bash
-# Testar via curl (com API Gateway configurado)
-curl -X POST https://<API_ID>.execute-api.us-east-1.amazonaws.com/prod/analisar-sinistro \
-  -H "Content-Type: application/json" \
-  -d '{"bucket": "docusmart-sinistros", "key": "uploads/boletim-teste.pdf"}'
-```
-
-## Estrutura do projeto
-
-```
-docusmart-motor-strands/
-├── lambda/
-│   └── lambda_function.py    ← Código principal (6 tools + handler)
-├── samples/                  ← PDFs de teste (não comitar dados reais)
-├── tests/
-│   └── test_payload.json     ← Payload para testar no Console AWS
-├── .env.example              ← Variáveis de ambiente necessárias
-└── README.md
-```
-
-## Integração com o time
-
-O Step Functions do time chama esta Lambda na etapa `AnalisarDocumento`:
-
+### Teste rápido no Console AWS
 ```json
 {
-  "Resource": "arn:aws:lambda:us-east-1:ACCOUNT:function:docusmart-motor",
-  "Parameters": {
-    "bucket.$": "$.bucket",
-    "key.$": "$.key"
-  }
+  "bucket": "docusmart-sinistros",
+  "key": "uploads/boletim-teste.pdf"
 }
 ```
 
-O JSON retornado alimenta o Agente SAC (Papel 4) via DynamoDB.
+---
+
+## 📋 Critérios do Case B (o que a banca avalia)
+
+| Critério | Responsável | Status |
+|----------|-------------|--------|
+| Pipeline IDP funcional (upload → extração) | Guilherme + Jhonny | ✅/⏳ |
+| Qualidade da extração e classificação | **Guilherme** | ✅ |
+| **Agente de IA com RAG** | **Wanderson** | ⏳ |
+| Arquitetura serverless + boas práticas | Todos | ⏳ |
+| Inovação e UX | Victor + Todos | ⏳ |
+| Apresentação e documentação | **Guilherme** | ⏳ |
 
 ---
 
-*Hack2Hire 2026 — Escola da Nuvem + AWS | Guilherme Barreto*
+## 🔗 Serviços AWS utilizados
+
+S3 · Textract · Comprehend · Rekognition · Bedrock (Claude 3 Haiku) ·
+Bedrock AgentCore · S3 Vectors · Lambda · DynamoDB · Step Functions · API Gateway · CloudWatch
+
+---
+
+*Hack2Hire 2026 — Escola da Nuvem + AWS*
+*Desenvolvido por: Guilherme Barreto e time*
