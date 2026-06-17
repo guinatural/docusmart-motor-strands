@@ -146,4 +146,4 @@ Bedrock AgentCore · S3 Vectors · Lambda · DynamoDB · Step Functions · API G
 ---
 
 *Hack2Hire 2026 — Escola da Nuvem + AWS*
-*Desenvolvido por: Guilherme Barreto e time*
+*Desenvolvido por: Guilherme Barreto e Time 5*
