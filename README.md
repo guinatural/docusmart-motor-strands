@@ -4,69 +4,146 @@
 
 ---
 
-## 🗺️ Mapa do Projeto
+## 👥 Equipe — Grupo 5
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  DOCUSMART INTELLIGENCE                                                 │
-│                                                                         │
-│  Cliente / Analista                                                     │
-│        ↓                                                                │
-│  API Gateway ────────────────────────── [Papel 3 — Jhonny]             │
-│        ↓                                                                │
-│  Step Functions ─────────────────────── [Papel 3 — Jhonny]             │
-│        ↓                                                                │
-│ ╔══════════════════════════════════════╗                               │
-│ ║  ⭐ MOTOR STRANDS                   ║ ← [Papel 1 — GUILHERME]       │
-│ ║  lambda/process_document/           ║                               │
-│ ║  Textract → Comprehend → Rekognition ║                               │
-│ ║  → Bedrock (Claude 3 Haiku)         ║                               │
-│ ║  → DynamoDB (resultado + auditoria) ║                               │
-│ ╚══════════════════════════════════════╝                               │
-│        ↓                                                                │
-│  DynamoDB ───────────────────────────── [Papel 2 — Jeanne/Jonny]       │
-│        ↓                                                                │
-│  Agente SAC ─────────────────────────── [Papel 4 — Wanderson]          │
-│  (Bedrock + S3 Vectors)                                                 │
-│        ↓                                                                │
-│  Frontend ───────────────────────────── [Papel 5 — Victor]             │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+| Nome | Papel | Responsabilidade |
+|------|-------|-----------------|
+| **Guilherme Barreto Gomes** | ⭐ Arquiteto IA / Backend | Motor Strands — Lambda + 6 Tools + Claude 3 Haiku |
+| **Jeannette Sofia Quidel Espinoza** | Cloud & Infra | S3, DynamoDB, IAM Roles |
+| **Arildo de Almeida** | Cloud & Infra | S3, DynamoDB, IAM Roles |
+| **Jhonatan Henrique Alves dos Santos** | Orquestração & API | Step Functions + API Gateway |
+| **Wanderson Carlos Ramos de Souza Sá Filho** | Dev Agente RAG | Bedrock AgentCore + S3 Vectors |
+| **Victor Griggi Moreira Regis da Silva** | Dev Frontend | Interface web — upload + chat |
+| **Ana Paula Lemos de Vasconcelos** | QA & Dados | PDFs de teste + validação E2E |
+| **Rubens Guilherme Lopes da Fonseca** | Product Owner / Pitch | Slides + vídeo + documentação |
 
 ---
 
-## 📁 Estrutura de Pastas e Responsáveis
+## 1. Entendendo a Necessidade do Cliente
 
-| Pasta | Responsável | Status |
-|-------|-------------|--------|
-| `lambda/process_document/` | ⭐ **Guilherme Barreto** | ✅ Implementado |
-| `lambda/api_handlers/` | Papel 3 — Jhonny | ⏳ Pendente |
-| `lambda/agent_handler/` | Papel 4 — Wanderson | ⏳ Pendente |
-| `step-functions/` | Papel 3 — Jhonny | ⏳ Pendente |
-| `infrastructure/` | Papel 2 — Jeanne/Jonny | ⏳ Pendente |
-| `frontend/` | Papel 5 — Victor | ⏳ Pendente |
-| `samples/documents/` | Todos | Adicionar PDFs de teste |
+### Cliente
+**DocuSmart Seguros** — seguradora de médio porte que processa centenas de sinistros por dia.
 
-> **Cada pasta tem um arquivo `OWNER.txt`** com as instruções detalhadas de implementação.
+**Persona principal:** Analista de sinistros que recebe pacotes de documentos em múltiplos formatos (PDF, imagens, scans) e precisa classificar, extrair dados e registrar manualmente cada documento nos sistemas internos.
+
+### Problema
+
+| Dor | Impacto Mensurável |
+|-----|-------------------|
+| Processamento manual lento | ~60 minutos por pacote de sinistro |
+| Erros de digitação | Retrabalho e atrasos no pagamento |
+| SAC sem busca inteligente | Atendentes buscam manualmente nos arquivos |
+| Não escala em picos | Catástrofes criam gargalo humano crítico |
+| Dados presos em PDF | Zero analytics ou insights operacionais |
+
+### Solução
+**DocuSmart Intelligence** — pipeline serverless de Processamento Inteligente de Documentos (IDP) integrado a um Agente de IA Generativa para consultas em linguagem natural.
+
+### Benefícios
+- Analista processa 1 pacote enquanto o sistema processa 30 — mesmo headcount
+- SAC responde perguntas sobre sinistros em menos de 15 segundos
+- Trilha de auditoria completa por etapa em cada documento processado
+- Suporte a PDFs e imagens de veículos no mesmo pipeline
+
+### Métricas de Sucesso
+
+| KPI | Baseline | Meta |
+|-----|----------|------|
+| Tempo de processamento por documento | ~15 min | < 2 min |
+| Tempo de triagem por pacote | ~60 min | < 10 min |
+| Tempo de resposta SAC | Minutos (busca manual) | < 15 segundos |
+| Custo por sinistro processado | Alto (RH dedicado) | < US$ 0,01 |
+| Cobertura de auditoria | 0% | 100% das etapas registradas |
 
 ---
 
-## ⭐ Motor de Análise (Guilherme) — Como funciona
+## 2. Arquitetura da Solução
+
+```
++--------------------------------------------------------------------------+
+|  SUPERFICIES - Frontend (React / Streamlit)  [Victor]                   |
+|  Upload cliente . Painel analista . Chat SAC                            |
++----------------------------+---------------------------------------------+
+                             |
+                    +--------v---------+
+                    |   API Gateway    |  [Jhonatan]
+                    | + Lambda intake  |
+                    +--------+---------+
+                             |
+                    +--------v--------------------------+
+                    |   Step Functions  [Jhonatan]      |
+                    |   Orquestra o pipeline IDP        |
+                    +--------+--------------------------+
+                             |
++========================== MOTOR STRANDS ==================================+
+|  [Guilherme Barreto Gomes] - Lambda Python 3.12                         |
+|  Strands Agent . Claude 3 Haiku (Bedrock)                               |
+|                                                                          |
+|  PDF/doc  --> Tool 1: Textract (OCR)                                    |
+|           --> Tool 2: Comprehend (NER pt-BR)                            |
+|  Imagem   --> Tool 3: Rekognition (labels + danos)                      |
+|           --> Tool 4: Bedrock (sintese JSON)                            |
+|           --> Tool 6: DynamoDB (auditoria por etapa)                    |
+|           --> Tool 5: DynamoDB (resultado final)                        |
++==========================================================================+
+                             |
+          +------------------+------------------+
+          |                  |                  |
+    Amazon S3           DynamoDB          S3 Vectors
+    (arquivos)      (fatos+auditoria)  (embeddings RAG)
+  [Jeannette/Arildo]                    [Wanderson]
+                             |
+                    +--------v-----------+
+                    |    Agente SAC      |  [Wanderson]
+                    |  Strands SDK       |
+                    |  Bedrock AgentCore |
+                    +--------------------+
+```
+
+### Serviços AWS Utilizados
+
+| Servico | Categoria | Funcao |
+|---------|-----------|--------|
+| Amazon Bedrock (Claude 3 Haiku) | **GenAI** | Sintese, classificacao, LLM do Agente SAC |
+| Amazon Bedrock AgentCore | **GenAI Nativo** | Agente conversacional gerenciado |
+| Amazon S3 Vectors | **GenAI Nativo** | Armazenamento vetorial para RAG |
+| Amazon Textract | Managed AI | OCR especializado em documentos |
+| Amazon Comprehend | Managed AI | NER em portugues |
+| Amazon Rekognition | Managed AI | Analise visual de imagens |
+| AWS Lambda | Serverless | Compute do motor e handlers |
+| AWS Step Functions | Managed | Orquestracao visual do pipeline |
+| Amazon DynamoDB | Serverless | Resultados + auditoria por etapa |
+| Amazon S3 | Managed | Armazenamento de documentos |
+| Amazon API Gateway | Managed | APIs REST |
+| Amazon CloudWatch | Managed | Logs e observabilidade |
+
+### IA Responsavel
+- **Transparencia:** auditoria completa de cada etapa no DynamoDB
+- **Privacidade (LGPD):** texto bruto nunca persistido; DELETE API remove dados do S3 e DynamoDB (Art. 18 LGPD)
+- **Confianca:** campo `confianca` em cada resultado; documentos com confianca < 0.8 sinalizados para revisao humana
+- **Seguranca:** IAM com least privilege por servico; sem credenciais hardcoded
+
+### Well-Architected
+- **Excelencia Operacional:** CloudWatch logs em todas as Lambdas; Step Functions com historico visual
+- **Seguranca:** IAM scoped por recurso; S3 com acesso publico bloqueado
+- **Confiabilidade:** Lambda serverless escala automaticamente
+- **Eficiencia:** Bedrock chamado uma unica vez por documento com payload minimo
+- **Otimizacao de Custos:** pay-per-use em todos os servicos; < US$ 0,01 por documento
+
+---
+
+## 3. Motor de Analise — Detalhe Tecnico
 
 ```
 POST /analisar-sinistro
 Body: { "bucket": "docusmart-sinistros", "key": "uploads/doc.pdf" }
 
-↓
-
-Lambda (Strands Agent — Claude 3 Haiku)
-  ├── Tool 1: Textract → extrai texto
-  ├── Tool 2: Comprehend → extrai entidades (pt-BR)
-  ├── Tool 3: Rekognition → analisa imagens
-  ├── Tool 6: DynamoDB → auditoria por etapa
-  └── Tool 5: DynamoDB → salva resultado final
-
-↓
+Lambda (Strands Agent - Claude 3 Haiku)
+  |- Tool 1: Textract   -> extrai texto do documento
+  |- Tool 2: Comprehend -> detecta entidades em pt-BR
+  |- Tool 3: Rekognition-> analisa imagens de veiculos
+  |- Tool 6: DynamoDB   -> registra auditoria por etapa
+  +- Tool 5: DynamoDB   -> salva resultado final
 
 HTTP 200 + JSON estruturado
 ```
@@ -74,23 +151,26 @@ HTTP 200 + JSON estruturado
 **Resposta:**
 ```json
 {
-  "id": "uuid",
+  "id": "7f3a91bc-...",
   "sinistro_id": "uuid",
-  "tipo_documento": "Boletim de Ocorrência",
+  "tipo_documento": "Boletim de Ocorrencia",
   "confianca": 0.94,
-  "resumo": "Acidente na Av. Paulista. Sem vítimas.",
-  "campos_extraidos": { "data": "...", "local": "...", "valor_prejuizo": "..." },
+  "resumo": "Acidente na Av. Paulista em 10/06/2025. Sem vitimas registradas.",
+  "campos_extraidos": {
+    "data": "10/06/2025",
+    "local": "Av. Paulista, 1000 - SP",
+    "valor_prejuizo": "R$ 4.500,00",
+    "envolvidos": ["Joao Silva", "Maria Souza"]
+  },
   "processado_em": "2026-06-17T14:23:00Z"
 }
 ```
 
 ---
 
-## 🚀 Como executar o motor (Guilherme)
+## 4. Configuracao da Lambda (Motor)
 
-### Configuração da Lambda
-
-| Parâmetro | Valor |
+| Parametro | Valor |
 |-----------|-------|
 | Runtime | Python 3.12 |
 | Handler | `lambda_function.lambda_handler` |
@@ -98,52 +178,65 @@ HTTP 200 + JSON estruturado
 | Memory | 512 MB |
 | Layer | `arn:aws:lambda:us-east-1:856699698935:layer:strands-agents-py3_12-x86_64:2` |
 
-### Variáveis de ambiente
+**Variaveis de ambiente:**
 ```
 AWS_REGION_NAME=us-east-1
 DYNAMO_TABLE_NAME=sinistros-resultados
 DOCUMENTS_BUCKET=docusmart-sinistros
 ```
 
-### Permissões IAM (Execution Role)
+**IAM (Execution Role):**
 ```
-AmazonTextractFullAccess
-AmazonComprehendReadOnly
-AmazonRekognitionReadOnlyAccess
-AmazonBedrockFullAccess
-AmazonDynamoDBFullAccess
-AmazonS3ReadOnlyAccess
-```
-
-### Teste rápido no Console AWS
-```json
-{
-  "bucket": "docusmart-sinistros",
-  "key": "uploads/boletim-teste.pdf"
-}
+AmazonTextractFullAccess . AmazonComprehendReadOnly
+AmazonRekognitionReadOnlyAccess . AmazonBedrockFullAccess
+AmazonDynamoDBFullAccess . AmazonS3ReadOnlyAccess
 ```
 
 ---
 
-## 📋 Critérios do Case B (o que a banca avalia)
+## 5. Estimativa de Custo
 
-| Critério | Responsável | Status |
-|----------|-------------|--------|
-| Pipeline IDP funcional (upload → extração) | Guilherme + Jhonny | ✅/⏳ |
-| Qualidade da extração e classificação | **Guilherme** | ✅ |
-| **Agente de IA com RAG** | **Wanderson** | ⏳ |
-| Arquitetura serverless + boas práticas | Todos | ⏳ |
-| Inovação e UX | Victor + Todos | ⏳ |
-| Apresentação e documentação | **Guilherme** | ⏳ |
+| Servico | Custo por documento | 1.000 docs/mes |
+|---------|--------------------|--------------------|
+| Textract | US$ 0,0015/pag | US$ 1,50 |
+| Comprehend | US$ 0,0003 | US$ 0,30 |
+| Rekognition | US$ 0,001/img | US$ 1,00 |
+| Bedrock (Claude Haiku) | US$ 0,00025 | US$ 0,25 |
+| Lambda + DynamoDB | ~US$ 0,001 | US$ 1,00 |
+| **Total estimado** | **~US$ 0,005/doc** | **~US$ 4,05/mes** |
+
+> ROI: uma hora de trabalho manual de analista (~R$ 25) substitui 5.000 documentos processados automaticamente (~US$ 25). Payback imediato.
 
 ---
 
-## 🔗 Serviços AWS utilizados
+## 6. Evolucoes Futuras
 
-S3 · Textract · Comprehend · Rekognition · Bedrock (Claude 3 Haiku) ·
-Bedrock AgentCore · S3 Vectors · Lambda · DynamoDB · Step Functions · API Gateway · CloudWatch
+| Evolucao | Impacto |
+|----------|---------|
+| Amazon A2I (Augmented AI) | Revisao humana automatica para confianca < 0.8 |
+| Amazon Bedrock Guardrails | Protecao de PII nas respostas do Agente SAC |
+| Multi-tenancy | Isolar dados por seguradora (LGPD multi-cliente) |
+| Amazon QuickSight | Dashboard executivo com metricas de sinistros |
+| Notificacoes SNS/SES | Alertar analista quando pacote estiver processado |
+
+---
+
+## 7. Estrutura de Pastas
+
+| Pasta | Responsavel | Status |
+|-------|-------------|--------|
+| `lambda/process_document/` | Guilherme Barreto Gomes | Implementado |
+| `lambda/api_handlers/` | Jhonatan Henrique Alves dos Santos | Pendente |
+| `lambda/agent_handler/` | Wanderson Carlos R. de Souza Sa Filho | Pendente |
+| `step-functions/` | Jhonatan Henrique Alves dos Santos | Pendente |
+| `infrastructure/` | Jeannette Sofia Q. Espinoza + Arildo de Almeida | Pendente |
+| `frontend/` | Victor Griggi M. R. da Silva | Pendente |
+| `samples/documents/` | Ana Paula L. de Vasconcelos | Pendente |
+| `docs/` | Rubens Guilherme L. da Fonseca | Pendente |
+
+> Cada pasta tem um arquivo `OWNER.txt` com instrucoes detalhadas.
 
 ---
 
 *Hack2Hire 2026 — Escola da Nuvem + AWS*
-*Desenvolvido por: Guilherme Barreto e Time 5*
+*Grupo 5 — DocuSmart Intelligence*
