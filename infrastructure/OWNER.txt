@@ -18,3 +18,18 @@
 #
 # ⚠️ TAG OBRIGATÓRIA EM TUDO: Group=Grupo5
 # Recursos sem tag ficam invisíveis para o grupo (política ativa desde 18/06)
+
+# POR QUE EXISTEM DUAS ROLES NA CONTA:
+# ========================================
+# docusmart-motor-role (Guilherme — Papel 1):
+#   Políticas: Textract + Comprehend + Rekognition + Bedrock + DynamoDB + S3ReadOnly + LambdaBasicExecution
+#   Princípio: MENOR PRIVILÉGIO — S3ReadOnly é suficiente para o motor LER documentos.
+#   Esta role está anexada à Lambda docusmart-process-document.
+#
+# docusmart-motor-role-grupo5 (Papel 2 — membro da infra):
+#   Políticas: as mesmas acima + StepFunctionsFullAccess + S3FullAccess
+#   Uso: para os componentes que precisam ESCREVER no S3 ou acionar Step Functions.
+#
+# DECISÃO ARQUITETURAL:
+#   Cada componente tem sua própria role com permissões mínimas.
+#   Isso segue o Well-Architected Framework (Pilar Segurança — Least Privilege).

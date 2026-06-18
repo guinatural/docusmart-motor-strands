@@ -11,6 +11,24 @@ REGION = os.environ.get("AWS_REGION_NAME", "us-east-1")
 TABLE  = os.environ["DYNAMO_TABLE_NAME"]
 
 
+def _normalize_agent_body(resposta) -> str:
+    """Garante JSON puro na resposta (Step Functions e API Gateway)."""
+    text = str(resposta).strip()
+    if "```json" in text:
+        start = text.index("```json") + 7
+        end = text.index("```", start)
+        text = text[start:end].strip()
+    elif text.startswith("```"):
+        start = text.index("```") + 3
+        end = text.index("```", start)
+        text = text[start:end].strip()
+    try:
+        json.loads(text)
+        return text
+    except json.JSONDecodeError:
+        return json.dumps({"raw_response": text})
+
+
 # ── Tool 1: Textract — OCR especializado em documentos ───────────────────────
 @tool
 def extrair_texto_documento(bucket: str, key: str) -> str:
@@ -170,10 +188,11 @@ def lambda_handler(event, context):
             "Classifique, extraia os campos, gere o resumo, registre a auditoria e salve o resultado."
         )
         resposta = agente(instrucao)
+        body = _normalize_agent_body(resposta)
         return {
             "statusCode": 200,
             "headers": {"Content-Type": "application/json"},
-            "body": str(resposta),
+            "body": body,
         }
     except Exception as exc:
         return {
