@@ -1,0 +1,91 @@
+{
+  "Comment": "IDP Pipeline - DocuSmart Seguros",
+  "StartAt": "ExtractText",
+  "States": {
+    "ExtractText": {
+      "Type": "Task",
+      "Resource": "${ProcessDocumentFunctionArn}",
+      "Next": "ClassifyDocument",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 1.5
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "ProcessingFailed",
+          "ResultPath": "$.error"
+        }
+      ]
+    },
+    "ClassifyDocument": {
+      "Type": "Task",
+      "Resource": "${ClassifyDocumentFunctionArn}",
+      "Next": "NormalizeWithBedrock",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 1.5
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "ProcessingFailed",
+          "ResultPath": "$.error"
+        }
+      ]
+    },
+    "NormalizeWithBedrock": {
+      "Type": "Task",
+      "Resource": "${NormalizeDocumentFunctionArn}",
+      "Next": "SaveToDynamoDB",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 3,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "ProcessingFailed",
+          "ResultPath": "$.error"
+        }
+      ]
+    },
+    "SaveToDynamoDB": {
+      "Type": "Task",
+      "Resource": "${SaveDocumentFunctionArn}",
+      "End": true,
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 1.5
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "ProcessingFailed",
+          "ResultPath": "$.error"
+        }
+      ]
+    },
+    "ProcessingFailed": {
+      "Type": "Fail",
+      "Error": "ProcessingError",
+      "Cause": "Falha no pipeline IDP"
+    }
+  }
+}
