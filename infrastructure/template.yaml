@@ -1,0 +1,200 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: IDP DocuSmart Seguros - Hackathon
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 60
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref DocumentsTable
+        BUCKET_NAME: !Ref DocumentsBucket
+
+Resources:
+
+  # ── Storage ──────────────────────────────────────────────
+  DocumentsBucket:
+    Type: AWS::S3::Bucket
+
+  DocumentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: sinistro_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: sinistro_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+
+  # ── IAM Role ──────────────────────────────────────────────
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: IDPPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - textract:AnalyzeDocument
+                  - textract:DetectDocumentText
+                  - comprehend:DetectEntities
+                  - bedrock:InvokeModel
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:DeleteItem
+                  - states:StartExecution
+                  - s3vectors:PutVectors
+                  - s3vectors:QueryVectors
+                  - s3vectors:GetVectors
+                Resource: "*"
+
+  StepFunctionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokeLambdas
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: "*"
+
+  # ── Lambdas do Pipeline ───────────────────────────────────
+  ProcessDocumentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/process_document/
+      Handler: handler.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Description: "Extrai texto e formulários com Textract"
+
+  ClassifyDocumentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/classify_document/
+      Handler: handler.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Description: "Classifica documento com Comprehend"
+
+  NormalizeDocumentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/normalize_document/
+      Handler: handler.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 120
+      Description: "Normaliza dados com Bedrock (Claude)"
+
+  SaveDocumentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/save_document/
+      Handler: handler.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Description: "Salva resultado no DynamoDB"
+
+  # ── Step Functions ────────────────────────────────────────
+  IDPStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: step-functions/workflow.json
+      DefinitionSubstitutions:
+        ProcessDocumentFunctionArn: !GetAtt ProcessDocumentFunction.Arn
+        ClassifyDocumentFunctionArn: !GetAtt ClassifyDocumentFunction.Arn
+        NormalizeDocumentFunctionArn: !GetAtt NormalizeDocumentFunction.Arn
+        SaveDocumentFunctionArn: !GetAtt SaveDocumentFunction.Arn
+      Role: !GetAtt StepFunctionsRole.Arn
+
+  # ── API Gateway + Handlers ────────────────────────────────
+  DocumentsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type'"
+        AllowOrigin: "'*'"
+
+  PostDocumentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/api_handlers/
+      Handler: post_document.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Description: "POST /documents - Upload de sinistro"
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref DocumentsTable
+          BUCKET_NAME: !Ref DocumentsBucket
+          STATE_MACHINE_ARN: !Ref IDPStateMachine
+      Events:
+        PostDoc:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DocumentsApi
+            Path: /documents
+            Method: POST
+
+  GetDocumentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/api_handlers/
+      Handler: get_document.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Description: "GET /documents/{sinistro_id} - Consulta sinistro"
+      Events:
+        GetDoc:
+          Type: Api
+          Properties:
+            RestApiId: !Ref DocumentsApi
+            Path: /documents/{sinistro_id}
+            Method: GET
+
+# ── Outputs ───────────────────────────────────────────────
+Outputs:
+  ApiUrl:
+    Description: "URL da API"
+    Value: !Sub "https://${DocumentsApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+
+  StateMachineArn:
+    Description: "ARN do Step Functions"
+    Value: !Ref IDPStateMachine
+
+  BucketName:
+    Description: "Nome do bucket S3"
+    Value: !Ref DocumentsBucket
+
+  TableName:
+    Description: "Nome da tabela DynamoDB"
+    Value: !Ref DocumentsTable
