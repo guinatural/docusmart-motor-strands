@@ -1,33 +1,28 @@
-﻿# frontend/OWNER.txt
-# ===================
-# RESPONSÁVEL: Papel 5 — Victor G. Silva
-# STATUS: ⏳ PENDENTE — implementar dias 19-21/06
+﻿# PAPEL 5 — Dev Frontend (O Showman da Tela)
+# ============================================
+# RESPONSÁVEL: Victor Griggi Moreira Regis da Silva
+# STATUS: ⏳ PENDENTE — implementar até 20/06
 #
-# O QUE ESTE MÓDULO PRECISA ENTREGAR:
+# STACK: React, Vue ou Streamlit (Python) — escolha da equipe
 #
-# Interface web com duas funcionalidades principais:
+# ENTREGÁVEIS:
+#   1. Tela de upload de PDFs
+#      - Campo para selecionar arquivo (PDF ou imagem)
+#      - Botão "Analisar"
+#      - Exibir JSON retornado de forma visual
 #
-# 1. UPLOAD DE DOCUMENTOS
-#    - Formulário para selecionar arquivo (PDF ou imagem)
-#    - Campo para informar o sinistro_id (ou gerar automaticamente)
-#    - Botão "Analisar"
-#    - Exibir o JSON retornado de forma visual (tipo, campos, resumo, confiança)
+#   2. Dashboard de dados
+#      - Lista de sinistros processados
+#      - Status por sinistro (processado, pendente, erro)
 #
-# 2. CHAT COM O AGENTE SAC
-#    - Campo de texto para perguntas
-#    - Exibir resposta do agente
-#    - Histórico da conversa
+#   3. Chat SAC
+#      - Campo de texto para perguntas
+#      - Exibir resposta do agente
+#      - Histórico da conversa
 #
-# TECNOLOGIA SUGERIDA:
-#    Streamlit (Python) — mais rápido para hackathon
-#    Alternativa: HTML/JS puro com fetch para a API
+# APIs disponíveis (fornecidas pelo Jhonatan — Papel 3):
+#   POST /analisar-sinistro   → processa documento
+#   GET  /sinistro/{id}       → consulta resultado
+#   POST /assistente/pergunta → chat com o agente
 #
-# APIs DISPONÍVEIS (fornecidas pelo Papel 3 — Jhonny):
-#    POST /analisar-sinistro   → processa documento
-#    GET  /sinistro/{id}       → consulta resultado
-#    POST /assistente/pergunta → chat com o agente
-#
-# MÍNIMO PARA A DEMO (dia 22/23):
-#    - Upload de 1 PDF → JSON na tela
-#    - 1 pergunta ao agente → resposta na tela
-#    - Interface funcionando (não precisa ser bonita, precisa funcionar)
+# TAG OBRIGATÓRIA em todos os recursos criados: Group=Grupo5

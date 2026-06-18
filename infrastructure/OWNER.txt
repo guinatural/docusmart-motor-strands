@@ -1,49 +1,20 @@
-﻿# infrastructure/OWNER.txt
-# =========================
-# RESPONSÁVEL: Papel 2 — Jeanne / Jonny
-# STATUS: ⏳ PENDENTE — criar recursos até 17/06 (quando chegam as credenciais AWS)
+﻿# PAPEL 2 — Cloud & Infra (O Encanador)
+# ========================================
+# RESPONSÁVEL: Jeannette Sofia Quidel Espinoza / Arildo de Almeida
+# STATUS: ⏳ VERIFICAR — recursos já criados pelo Guilherme em 17/06
 #
-# RECURSOS QUE PRECISAM SER CRIADOS:
+# STACK: IAM · S3 · DynamoDB
 #
-# 1. Amazon S3
-#    Bucket: docusmart-sinistros
-#    Prefixos: uploads/, processados/
-#    Configuração: bloquear acesso público
+# RECURSOS JÁ CRIADOS (Guilherme — 17/06):
+#   S3:       docusmart-sinistros-152160819260 (tag: Group=Grupo5)
+#   DynamoDB: sinistros-resultados             (tag: Group=Grupo5)
+#   IAM Role: docusmart-motor-role             (tag: Group=Grupo5)
 #
-# 2. Amazon DynamoDB
-#    Tabela: sinistros-resultados
-#    Partition Key: id (String)
-#    Billing: PAY_PER_REQUEST (on-demand)
-#    OBS: o Motor do Guilherme grava dois tipos de item:
-#         - Resultado final:  id = UUID
-#         - Auditoria:        id = "AUDIT#sinistro_id#timestamp"
+# O QUE AINDA PODE SER NECESSÁRIO:
+#   1. Verificar se as permissões estão corretas para o Step Functions acessar a Lambda
+#   2. Criar IAM Role para o Step Functions (se Jhonatan precisar)
+#   3. Criar IAM Role para o Agente SAC (se Wanderson precisar)
+#   4. Garantir que todos os novos recursos criados pelo time tenham tag Group=Grupo5
 #
-# 3. IAM — Execution Role para a Lambda do Guilherme
-#    Nome sugerido: docusmart-motor-role
-#    Políticas necessárias:
-#      - AmazonTextractFullAccess
-#      - AmazonComprehendReadOnly
-#      - AmazonRekognitionReadOnlyAccess
-#      - AmazonBedrockFullAccess
-#      - AmazonDynamoDBFullAccess
-#      - AmazonS3ReadOnlyAccess
-#      - AWSLambdaBasicExecutionRole
-#
-# 4. Lambda — Motor do Guilherme
-#    Nome: docusmart-process-document
-#    Runtime: Python 3.12
-#    Handler: lambda_function.lambda_handler
-#    Timeout: 60 segundos
-#    Memory: 512 MB
-#    Layer: arn:aws:lambda:us-east-1:856699698935:layer:strands-agents-py3_12-x86_64:2
-#    Env vars:
-#      AWS_REGION_NAME=us-east-1
-#      DYNAMO_TABLE_NAME=sinistros-resultados
-#      DOCUMENTS_BUCKET=docusmart-sinistros
-#
-# ORDEM DE CRIAÇÃO (importante):
-#   1. S3 bucket
-#   2. DynamoDB tabela
-#   3. IAM Role
-#   4. Lambda (com a Role do passo 3)
-#   5. Teste com payload de exemplo
+# ⚠️ TAG OBRIGATÓRIA EM TUDO: Group=Grupo5
+# Recursos sem tag ficam invisíveis para o grupo (política ativa desde 18/06)

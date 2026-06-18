@@ -131,7 +131,7 @@ def lambda_handler(event, context):
     sinistro_id  = str(uuid.uuid4())
 
     agente = Agent(
-        model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0"),
+        model=BedrockModel(model_id="us.anthropic.claude-haiku-4-5-20251001-v1:0"),
         tools=[
             extrair_texto_documento,
             extrair_entidades_texto,
@@ -183,3 +183,4 @@ def lambda_handler(event, context):
                 "message": str(exc),
             }),
         }
+

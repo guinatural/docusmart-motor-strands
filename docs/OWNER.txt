@@ -1,0 +1,29 @@
+﻿# PAPEL 7 — Product Owner / Pitch (O Mestre da Narrativa)
+# =========================================================
+# RESPONSÁVEL: Rubens Guilherme Lopes da Fonseca
+# STATUS: ⏳ PENDENTE — entregar até 20/06
+#
+# STACK: PowerPoint (template oficial EDN) · Storytelling · Organização
+#
+# ENTREGÁVEIS:
+#   1. Slides no template oficial da EDN (6 minutos de apresentação)
+#      Estrutura obrigatória pelo Guia:
+#      - Slide 1: Capa (nome do projeto + equipe)
+#      - Slide 2: Problema (DocuSmart Seguros — 60 min por pacote)
+#      - Slide 3: Solução (pipeline IDP + Agente SAC)
+#      - Slide 4: Arquitetura (diagrama dos serviços AWS)
+#      - Slide 5: Demo (screenshot ou GIF do motor rodando)
+#      - Slide 6: Métricas de sucesso + ROI
+#      - Slide 7: Próximos passos / evoluções futuras
+#
+#   2. Diagrama de arquitetura (draw.io ou Excalidraw)
+#      Serviços: S3, Textract, Comprehend, Rekognition,
+#               Bedrock Claude Haiku 4.5, Lambda, DynamoDB,
+#               Step Functions, API Gateway, Bedrock AgentCore, S3 Vectors
+#
+#   3. Roteiro do Pitch de 2 minutos (versão executiva para o dia 25)
+#
+# REFERÊNCIAS:
+#   README.md do repo tem todas as seções prontas para usar nos slides
+#   Obsidian: 03 - Pitch e Apresentacao.md
+#   Obsidian: 17 - Diagrama Arquitetura Completa.md

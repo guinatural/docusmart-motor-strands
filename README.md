@@ -4,10 +4,19 @@
 
 ---
 
-## 👥 Equipe — Grupo 5
+## 👥 Equipe — Squad DocuSmart (Grupo 5)
 
-| Nome | Papel | Responsabilidade |
-|------|-------|-----------------|
+| # | Papel | 👤 Responsável | Stack | Entregáveis |
+|---|-------|---------------|-------|------------|
+| 1 | **Arquiteto IA / Backend (Motor de Extração)** | **Guilherme Barreto Gomes** | Python · Strands SDK · Textract · Bedrock | Lambda process_document + classify_document + JSON final ✅ |
+| 2 | **Cloud & Infra (O Encanador)** | **Jeannette Sofia Quidel Espinoza / Arildo de Almeida** | IAM · S3 · DynamoDB | Buckets S3 · DynamoDB · IAM Roles · variáveis de ambiente |
+| 3 | **Orquestração & API (O Fio Condutor)** | **Jhonatan Henrique Alves dos Santos** | Step Functions · API Gateway | Máquina de estados + rotas REST POST/GET |
+| 4 | **Dev Agente RAG (O Cérebro do Chat)** | **Wanderson Carlos Ramos de Souza Sá Filho** | Bedrock AgentCore · S3 Vectors | AgentCore + S3 Vectors + Prompt SAC |
+| 5 | **Dev Frontend (O Showman da Tela)** | **Victor Griggi Moreira Regis da Silva** | React · Vue · Streamlit | Tela upload + Dashboard + Chat SAC |
+| 6 | **QA & Dados (O Engenheiro do Caos)** | **Ana Paula Lemos de Vasconcelos** | Postman · Testes E2E · Fake Data | PDFs falsos + popular banco + validar rotas |
+| 7 | **Product Owner / Pitch (O Mestre da Narrativa)** | **Guilherme + time (colaborativo)** | PowerPoint · Storytelling | README + Diagrama + Pitch 2 minutos |
+
+------|-------|-----------------|
 | **Guilherme Barreto Gomes** | ⭐ Arquiteto IA / Backend | Motor Strands — Lambda + 6 Tools + Claude 3 Haiku |
 | **Jeannette Sofia Quidel Espinoza** | Cloud & Infra | S3, DynamoDB, IAM Roles |
 | **Arildo de Almeida** | Cloud & Infra | S3, DynamoDB, IAM Roles |
@@ -240,3 +249,4 @@ AmazonDynamoDBFullAccess . AmazonS3ReadOnlyAccess
 
 *Hack2Hire 2026 — Escola da Nuvem + AWS*
 *Grupo 5 — DocuSmart Intelligence*
+

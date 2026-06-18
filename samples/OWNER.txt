@@ -1,0 +1,28 @@
+﻿# PAPEL 6 — QA & Dados (O Engenheiro do Caos)
+# ==============================================
+# RESPONSÁVEL: Ana Paula Lemos de Vasconcelos
+# STATUS: ⏳ PENDENTE — entregar até 18/06 ao meio-dia
+#
+# STACK: Postman · Testes E2E · Fake Data
+#
+# ENTREGÁVEIS:
+#   1. PDFs falsos para teste do motor (salvar nesta pasta):
+#      - boletim-ocorrencia-SIN-2026-004521.pdf
+#      - nota-fiscal-SIN-2026-004521.pdf
+#      - laudo-medico-SIN-2026-004521.pdf
+#      - foto-veiculo-SIN-2026-004521.jpg
+#
+#   Todos referenciando o mesmo sinistro: SIN-2026-004521
+#   Gerar com ChatGPT, Claude ou Gemini — prompts disponíveis em:
+#   Obsidian: 19 - Documentos de Teste e Contexto Estrategico.md
+#
+#   2. Coleção Postman com os 4 endpoints:
+#      POST /analisar-sinistro
+#      GET  /sinistro/{id}
+#      POST /assistente/pergunta
+#      DELETE /sinistro/{id}
+#
+#   3. Validação E2E: confirmar que o JSON retornado tem todos os campos
+#
+# UPLOAD DOS PDFs NO S3 (quando estiverem prontos):
+#   aws s3 cp arquivo.pdf s3://docusmart-sinistros-152160819260/uploads/ --profile hackathon
