@@ -12,7 +12,8 @@
 #
 # 2. Amazon DynamoDB
 #    Tabela: sinistros-resultados
-#    Partition Key: id (String)
+#    Partition Key: sinistro_id (String)
+#    Sort key: timestamp
 #    Billing: PAY_PER_REQUEST (on-demand)
 #    OBS: o Motor do Guilherme grava dois tipos de item:
 #         - Resultado final:  id = UUID
@@ -22,7 +23,7 @@
 #    Nome sugerido: docusmart-motor-role
 #    Políticas necessárias:
 #      - AmazonTextractFullAccess
-#      - AmazonComprehendReadOnly
+#      - ComprehendReadOnly
 #      - AmazonRekognitionReadOnlyAccess
 #      - AmazonBedrockFullAccess
 #      - AmazonDynamoDBFullAccess
