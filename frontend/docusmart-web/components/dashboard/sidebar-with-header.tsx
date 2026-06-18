@@ -91,7 +91,7 @@ export default function SidebarWithHeader({
             </div>
             <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6 pb-4 ring-1 ring-white/10">
               <div className="flex h-16 shrink-0 items-center">
-                <Logo />
+                <Logo onDark />
               </div>
               <nav className="flex flex-1 flex-col">
                 <NavLinks pathname={pathname} />
@@ -105,7 +105,7 @@ export default function SidebarWithHeader({
       <div className="hidden bg-gray-900 ring-1 ring-white/10 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
         <div className="flex grow flex-col gap-y-5 overflow-y-auto px-6 pb-4">
           <div className="flex h-16 shrink-0 items-center">
-            <Logo />
+            <Logo onDark />
           </div>
           <nav className="flex flex-1 flex-col">
             <NavLinks pathname={pathname} />

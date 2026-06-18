@@ -7,9 +7,9 @@ export const buttonVariants = cva('inline-flex items-center justify-center round
   {
     variants: {
       variant: {
-        primary: 'bg-indigo-600 text-white hover:bg-indigo-500 focus-visible:outline-indigo-600',
+        primary: 'bg-sky-600 text-white hover:bg-sky-500 focus-visible:outline-sky-600',
         secondary:'bg-background text-foreground outline outline-foreground/20 hover:bg-foreground/5',
-        soft: 'bg-indigo-600/10 text-indigo-600 hover:bg-indigo-600/20',
+        soft: 'bg-sky-600/10 text-sky-600 hover:bg-sky-600/20',
         text: 'bg-transparent text-foreground hover:text-foreground/70',
         error: 'bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600',
       },

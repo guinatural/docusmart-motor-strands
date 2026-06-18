@@ -49,7 +49,7 @@ export default function ChatSac() {
     <div className="flex h-[calc(100vh-9rem)] flex-col">
       <div className="mb-4">
         <h1 className="text-foreground flex items-center gap-2 text-xl font-semibold">
-          <SparklesIcon className="size-5 text-indigo-500" />
+          <SparklesIcon className="size-5 text-sky-500" />
           Assistente SAC
         </h1>
         <p className="text-foreground/60 mt-1 text-sm">
@@ -72,7 +72,7 @@ export default function ChatSac() {
               className={cn(
                 'max-w-[80%] rounded-2xl px-4 py-2.5 text-sm',
                 m.autor === 'usuario'
-                  ? 'bg-indigo-600 text-white'
+                  ? 'bg-sky-600 text-white'
                   : 'bg-foreground/5 text-foreground',
               )}
             >
@@ -122,12 +122,12 @@ export default function ChatSac() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Pergunte sobre um sinistro…"
-          className="bg-background text-foreground placeholder:text-foreground/40 outline-foreground/20 focus:outline-indigo-600 flex-1 rounded-full px-4 py-2.5 text-sm outline -outline-offset-1 focus:outline-2 focus:-outline-offset-2"
+          className="bg-background text-foreground placeholder:text-foreground/40 outline-foreground/20 focus:outline-sky-600 flex-1 rounded-full px-4 py-2.5 text-sm outline -outline-offset-1 focus:outline-2 focus:-outline-offset-2"
         />
         <button
           type="submit"
           disabled={pensando || !input.trim()}
-          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-50"
+          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-sky-600 text-white hover:bg-sky-500 disabled:opacity-50"
           aria-label="Enviar"
         >
           <PaperAirplaneIcon className="size-5" />

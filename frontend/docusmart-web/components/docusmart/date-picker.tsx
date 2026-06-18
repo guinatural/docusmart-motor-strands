@@ -72,7 +72,7 @@ export default function DatePicker({
         <PopoverButton
           id={id}
           className={cn(
-            'bg-background text-foreground outline-foreground/20 focus:outline-indigo-600',
+            'bg-background text-foreground outline-foreground/20 focus:outline-sky-600',
             'flex h-10 w-full items-center justify-between rounded-md px-3 text-left text-sm outline -outline-offset-1 focus:outline-2 focus:-outline-offset-2',
           )}
         >
@@ -136,9 +136,9 @@ export default function DatePicker({
                       className={cn(
                         'flex size-9 items-center justify-center rounded-md text-sm',
                         selecionado
-                          ? 'bg-indigo-600 font-semibold text-white'
+                          ? 'bg-sky-600 font-semibold text-white'
                           : 'text-foreground/80 hover:bg-foreground/10',
-                        !selecionado && ehHoje && 'text-indigo-500 font-semibold',
+                        !selecionado && ehHoje && 'text-sky-500 font-semibold',
                       )}
                     >
                       {dia}

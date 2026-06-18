@@ -52,7 +52,7 @@ export default function PainelClient() {
   }, [sinistros, filtro]);
 
   const cards = [
-    { label: 'Sinistros', valor: kpis.total, icon: DocumentTextIcon, tone: 'text-indigo-500' },
+    { label: 'Sinistros', valor: kpis.total, icon: DocumentTextIcon, tone: 'text-sky-500' },
     { label: 'Fila de revisão', valor: kpis.atencao, icon: ExclamationTriangleIcon, tone: 'text-amber-500' },
     { label: 'Aprovados', valor: kpis.aprovados, icon: CheckCircleIcon, tone: 'text-emerald-500' },
     { label: 'Total em orçamentos', valor: formatBRL(kpis.valor), icon: ClockIcon, tone: 'text-blue-500' },
@@ -103,7 +103,7 @@ export default function PainelClient() {
             className={cn(
               'rounded-full px-3 py-1 text-sm font-medium transition-colors',
               filtro === f.key
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-sky-600 text-white'
                 : 'bg-foreground/5 text-foreground/70 hover:bg-foreground/10',
             )}
           >
@@ -146,7 +146,7 @@ export default function PainelClient() {
                   <td className="px-4 py-3">
                     <Link
                       href={APP_ROUTES.PRIVATE.SINISTRO(s.numero_sinistro)}
-                      className="font-mono font-medium text-indigo-600 hover:text-indigo-500"
+                      className="font-mono font-medium text-sky-600 hover:text-sky-500"
                     >
                       {s.numero_sinistro}
                     </Link>

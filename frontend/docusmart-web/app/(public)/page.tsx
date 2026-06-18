@@ -30,7 +30,7 @@ export default function Home() {
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-12">
         {/* coluna de apresentação */}
         <div className="flex flex-col justify-center">
-          <span className="text-indigo-500 text-sm font-semibold tracking-wide uppercase">
+          <span className="text-sky-500 text-sm font-semibold tracking-wide uppercase">
             DocuSmart Seguros
           </span>
           <h1 className="text-foreground mt-3 text-3xl font-semibold tracking-tight text-pretty sm:text-4xl">
@@ -45,8 +45,8 @@ export default function Home() {
           <ul className="mt-8 space-y-4">
             {destaques.map((d) => (
               <li key={d.titulo} className="flex gap-3">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600/10">
-                  <d.icon className="size-5 text-indigo-500" />
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-600/10">
+                  <d.icon className="size-5 text-sky-500" />
                 </span>
                 <div>
                   <p className="text-foreground text-sm font-semibold">

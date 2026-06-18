@@ -15,7 +15,7 @@ export default function Timeline({ operacoes }: { operacoes: Operacao[] }) {
     <ol className="relative space-y-5 border-l border-foreground/15 pl-5">
       {operacoes.map((op, i) => (
         <li key={`${op.timestamp}-${i}`} className="relative">
-          <span className="absolute top-1 -left-[1.4rem] size-2.5 rounded-full bg-indigo-500 ring-4 ring-background" />
+          <span className="absolute top-1 -left-[1.4rem] size-2.5 rounded-full bg-sky-500 ring-4 ring-background" />
           <div className="flex flex-wrap items-baseline gap-x-2">
             <span className="text-foreground text-sm font-semibold">
               {ETAPA_OPERACAO[op.etapa]}

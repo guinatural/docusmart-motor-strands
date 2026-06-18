@@ -16,7 +16,7 @@ export default function Error() {
       <div className="mt-10">
         <Link
           href={APP_ROUTES.PUBLIC.HOME}
-          className="text-sm/7 font-semibold text-indigo-600 hover:text-indigo-500"
+          className="text-sm/7 font-semibold text-sky-600 hover:text-sky-500"
         >
           <span aria-hidden="true">&larr;</span> Voltar ao início
         </Link>

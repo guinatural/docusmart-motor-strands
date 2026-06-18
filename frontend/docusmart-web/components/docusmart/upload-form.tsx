@@ -139,7 +139,7 @@ export default function UploadForm() {
             id="tipo_sinistro"
             value={tipoSinistro}
             onChange={(e) => setTipoSinistro(e.target.value as TipoSinistro)}
-            className="bg-background text-foreground outline-foreground/20 focus:outline-indigo-600 mt-2 block h-10 w-full rounded-md px-3 text-sm outline -outline-offset-1 focus:outline-2 focus:-outline-offset-2"
+            className="bg-background text-foreground outline-foreground/20 focus:outline-sky-600 mt-2 block h-10 w-full rounded-md px-3 text-sm outline -outline-offset-1 focus:outline-2 focus:-outline-offset-2"
           >
             {Object.entries(TIPO_SINISTRO).map(([value, label]) => (
               <option key={value} value={value}>
@@ -181,7 +181,7 @@ export default function UploadForm() {
           type="checkbox"
           checked={terceiros}
           onChange={(e) => setTerceiros(e.target.checked)}
-          className="size-4 rounded border-foreground/30 text-indigo-600 focus:ring-indigo-600"
+          className="size-4 rounded border-foreground/30 text-sky-600 focus:ring-sky-600"
         />
         <span className="text-foreground/80">
           Houve terceiros envolvidos no sinistro
@@ -195,7 +195,7 @@ export default function UploadForm() {
         </span>
         <label
           htmlFor="arquivos"
-          className="border-foreground/20 hover:border-indigo-500 mt-2 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-6 py-8 text-center transition-colors"
+          className="border-foreground/20 hover:border-sky-500 mt-2 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-6 py-8 text-center transition-colors"
         >
           <ArrowUpTrayIcon className="text-foreground/40 size-7" />
           <span className="text-foreground/70 mt-2 text-sm">
