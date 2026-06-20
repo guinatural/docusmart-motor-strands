@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  ArrowPathIcon,
   CheckCircleIcon,
   ClockIcon,
   DocumentTextIcon,
@@ -55,6 +54,8 @@ export default function PainelClient() {
 
   React.useEffect(() => {
     carregar();
+    const t = setInterval(carregar, 15000); // auto-refresh silencioso
+    return () => clearInterval(t);
   }, [carregar]);
 
   const kpis = React.useMemo(() => {
@@ -96,24 +97,16 @@ export default function PainelClient() {
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-foreground text-xl font-semibold">
-            Painel de sinistros
-          </h1>
-          <p className="text-foreground/60 mt-1 text-sm">
-            Visão do analista — dados, status e fila de revisão.
-          </p>
-        </div>
-        <button
-          onClick={carregar}
-          className="text-foreground/60 hover:text-foreground inline-flex items-center gap-1.5 text-sm"
-        >
-          <ArrowPathIcon className="size-4" /> Atualizar
-        </button>
+      <div>
+        <h1 className="text-foreground text-xl font-semibold">
+          Painel de sinistros
+        </h1>
+        <p className="text-foreground/60 mt-1 text-sm">
+          Visão do analista — dados, status e fila de revisão.
+        </p>
       </div>
 
-      <dl className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <dl className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {cards.map((c) => (
           <div
             key={c.label}
@@ -131,10 +124,20 @@ export default function PainelClient() {
       </dl>
 
       {sinistros && sinistros.length > 0 && (
-        <PainelGraficos sinistros={sinistros} />
+        <>
+          <h2 className="text-foreground/50 mt-10 text-xs font-semibold tracking-wide uppercase">
+            Indicadores
+          </h2>
+          <div className="mt-3">
+            <PainelGraficos sinistros={sinistros} />
+          </div>
+        </>
       )}
 
-      <div className="bg-background inset-ring-foreground/10 mt-6 overflow-hidden rounded-xl shadow-sm inset-ring">
+      <h2 className="text-foreground/50 mt-10 text-xs font-semibold tracking-wide uppercase">
+        Sinistros
+      </h2>
+      <div className="bg-background inset-ring-foreground/10 mt-3 overflow-hidden rounded-xl shadow-sm inset-ring">
         {/* toolbar: filtros + contador */}
         <div className="border-foreground/10 flex flex-wrap items-center gap-2 border-b p-3">
           {filtros.map((f) => (

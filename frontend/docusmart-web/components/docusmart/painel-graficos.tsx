@@ -27,9 +27,9 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-background inset-ring-foreground/10 rounded-xl p-5 shadow-sm inset-ring">
+    <div className="bg-background inset-ring-foreground/10 flex min-h-52 flex-col rounded-xl p-5 shadow-sm inset-ring">
       <h3 className="text-foreground/70 mb-4 text-sm font-semibold">{titulo}</h3>
-      {children}
+      <div className="flex flex-1 flex-col justify-center">{children}</div>
     </div>
   );
 }
@@ -108,7 +108,7 @@ export default function PainelGraficos({ sinistros }: { sinistros: SinistroApi[]
   const taxaAuto = total ? Math.round(((total - emAnalise) / total) * 100) : 0;
 
   return (
-    <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
       <Card titulo="Distribuição por status">
         <div className="flex items-center gap-5">
           <Donut data={statusData} total={total} />
