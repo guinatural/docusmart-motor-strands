@@ -14,8 +14,8 @@ import { APP_ROUTES } from '@/constants/app-routes';
 import { statusPipelineMeta } from '@/lib/docusmart/constants';
 import { formatDataHora } from '@/lib/docusmart/format';
 import {
+  confiancaPct,
   listarSinistrosApi,
-  parseConfianca,
   type DocumentoApi,
 } from '@/lib/docusmart/api';
 import { cn } from '@/lib/utils';
@@ -171,7 +171,7 @@ export default function PainelClient() {
             <tbody className="divide-y divide-foreground/5">
               {visiveis.map((s) => {
                 const id = idDe(s);
-                const conf = parseConfianca(s.confianca);
+                const conf = confiancaPct(s.confianca);
                 return (
                   <tr
                     key={id}
@@ -186,7 +186,12 @@ export default function PainelClient() {
                       </Link>
                     </td>
                     <td className="text-foreground/80 px-4 py-3">
-                      {s.campos_extraidos?.envolvidos?.[0]?.nome ?? '—'}
+                      {(() => {
+                        const e0 = s.campos_extraidos?.envolvidos?.[0];
+                        const nome =
+                          typeof e0 === 'string' ? e0 : e0?.nome;
+                        return nome ?? s.dados_formulario?.numero_apolice ?? '—';
+                      })()}
                     </td>
                     <td className="text-foreground/70 hidden px-4 py-3 sm:table-cell">
                       {s.tipo_documento ?? '—'}
@@ -195,7 +200,7 @@ export default function PainelClient() {
                       {formatDataHora(s.processado_em)}
                     </td>
                     <td className="text-foreground/80 px-4 py-3 text-right tabular-nums">
-                      {conf != null ? `${(conf * 100).toFixed(0)}%` : '—'}
+                      {conf != null ? `${conf}%` : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <PipelineBadge status={s.status_pipeline} />

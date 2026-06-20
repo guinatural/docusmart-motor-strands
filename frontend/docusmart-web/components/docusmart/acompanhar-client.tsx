@@ -11,8 +11,8 @@ import InputWithLabel from '@/components/ui/input';
 import { statusPipelineTerminal } from '@/lib/docusmart/constants';
 import { formatDataHora } from '@/lib/docusmart/format';
 import {
+  confiancaPct,
   obterDocumento,
-  parseConfianca,
   type DocumentoResposta,
 } from '@/lib/docusmart/api';
 
@@ -67,8 +67,9 @@ export default function AcompanharClient() {
   const doc = detalhe?.documento;
   const processando =
     doc != null && !statusPipelineTerminal(doc.status_pipeline);
-  const confianca = parseConfianca(doc?.confianca);
-  const segurado = doc?.campos_extraidos?.envolvidos?.[0]?.nome;
+  const confianca = confiancaPct(doc?.confianca);
+  const env0 = doc?.campos_extraidos?.envolvidos?.[0];
+  const segurado = typeof env0 === 'string' ? env0 : env0?.nome;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
@@ -117,7 +118,7 @@ export default function AcompanharClient() {
               {doc.tipo_documento && (
                 <p className="text-foreground/60 mt-0.5 text-sm">
                   {doc.tipo_documento}
-                  {confianca != null && ` · ${(confianca * 100).toFixed(0)}% confiança`}
+                  {confianca != null && ` · ${confianca}% confiança`}
                 </p>
               )}
             </div>

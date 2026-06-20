@@ -111,6 +111,20 @@ export interface Envolvido {
   funcao?: string;
 }
 
+export interface DadosFormularioApi {
+  numero_apolice?: string;
+  tipo_sinistro?: string;
+  data_sinistro?: string;
+  local?: string;
+  terceiros_envolvidos?: boolean;
+  contato?: string;
+}
+
+export interface LabelDetectado {
+  label?: string;
+  confianca?: number | string;
+}
+
 export interface DocumentoApi {
   id?: string;
   sinistro_id?: string;
@@ -121,6 +135,8 @@ export interface DocumentoApi {
   processado_em?: string;
   data_processamento_pipeline?: string;
   s3_origem?: { bucket?: string; key?: string };
+  dados_formulario?: DadosFormularioApi;
+  labels_detectados?: LabelDetectado[];
   campos_extraidos?: {
     marca_modelo?: string;
     placa_veiculo?: string;
@@ -130,7 +146,8 @@ export interface DocumentoApi {
     cor?: string;
     local?: string;
     valor_prejuizo?: string;
-    envolvidos?: Envolvido[];
+    // pode vir como objeto {nome,cpf,funcao} ou string ("1 veículo")
+    envolvidos?: (Envolvido | string)[];
     [campo: string]: unknown;
   };
   [campo: string]: unknown;
@@ -179,11 +196,18 @@ export async function listarSinistrosApi(): Promise<DocumentoApi[]> {
   return data?.sinistros ?? [];
 }
 
-/** confianca pode vir como string ("0.95") ou número. */
-export function parseConfianca(v: number | string | undefined): number | null {
+/**
+ * Normaliza a confiança para 0–100 (inteiro). O backend manda em vários
+ * formatos: "0.93", "0.935", "95", "93,5%", "", "0", null. Trata todos.
+ */
+export function confiancaPct(v: number | string | undefined): number | null {
   if (v == null) return null;
-  const n = typeof v === 'number' ? v : parseFloat(v);
-  return Number.isFinite(n) ? n : null;
+  const s = String(v).trim().replace('%', '').replace(',', '.');
+  if (!s) return null;
+  const n = parseFloat(s);
+  if (!Number.isFinite(n)) return null;
+  const pct = n <= 1 ? n * 100 : n; // fração vs já-percentual
+  return Math.round(pct);
 }
 
 // ── Agente SAC (POST /chat) ──────────────────────────────────────────────────

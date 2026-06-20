@@ -8,10 +8,10 @@ import OperacoesTimeline from '@/components/docusmart/operacoes-timeline';
 import PipelineBadge from '@/components/docusmart/pipeline-badge';
 import { APP_ROUTES } from '@/constants/app-routes';
 import { statusPipelineTerminal } from '@/lib/docusmart/constants';
-import { formatDataHora } from '@/lib/docusmart/format';
+import { formatData, formatDataHora } from '@/lib/docusmart/format';
 import {
+  confiancaPct,
   obterDocumento,
-  parseConfianca,
   type DocumentoResposta,
 } from '@/lib/docusmart/api';
 
@@ -89,7 +89,10 @@ export default function SinistroDetalhe({ id }: { id: string }) {
   const doc = detalhe?.documento;
   const campos = doc?.campos_extraidos ?? {};
   const envolvidos = campos.envolvidos ?? [];
-  const confianca = parseConfianca(doc?.confianca);
+  const temCampos = CAMPOS.some(
+    (c) => campos[c.chave] != null && campos[c.chave] !== '',
+  );
+  const confianca = confiancaPct(doc?.confianca);
   const processando =
     doc != null && !statusPipelineTerminal(doc.status_pipeline);
 
@@ -119,8 +122,7 @@ export default function SinistroDetalhe({ id }: { id: string }) {
               </h1>
               <p className="text-foreground/60 mt-1 text-sm">
                 {doc.tipo_documento ?? 'Documento'}
-                {confianca != null &&
-                  ` · ${(confianca * 100).toFixed(0)}% confiança`}
+                {confianca != null && ` · ${confianca}% confiança`}
               </p>
             </div>
             <PipelineBadge status={doc.status_pipeline} className="mt-1" />
@@ -141,40 +143,91 @@ export default function SinistroDetalhe({ id }: { id: string }) {
                 </Secao>
               )}
 
-              <Secao titulo="Dados extraídos">
-                <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                  {CAMPOS.map((c) => {
-                    const v = campos[c.chave];
-                    if (v == null || v === '') return null;
-                    return (
-                      <Campo key={c.chave} rotulo={c.rotulo} valor={String(v)} />
-                    );
-                  })}
-                </dl>
-              </Secao>
+              {temCampos && (
+                <Secao titulo="Dados extraídos">
+                  <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                    {CAMPOS.map((c) => {
+                      const v = campos[c.chave];
+                      if (v == null || v === '') return null;
+                      return (
+                        <Campo
+                          key={c.chave}
+                          rotulo={c.rotulo}
+                          valor={String(v)}
+                        />
+                      );
+                    })}
+                  </dl>
+                </Secao>
+              )}
 
               {envolvidos.length > 0 && (
                 <Secao titulo="Envolvidos">
                   <ul className="divide-y divide-foreground/5">
-                    {envolvidos.map((e, i) => (
-                      <li
-                        key={i}
-                        className="flex items-center justify-between py-2 text-sm"
-                      >
-                        <span className="text-foreground/80">
-                          {e.nome ?? '—'}
-                          {e.cpf && (
-                            <span className="text-foreground/40"> · {e.cpf}</span>
-                          )}
-                        </span>
-                        {e.funcao && (
-                          <span className="text-foreground/50 text-xs">
-                            {e.funcao}
+                    {envolvidos.map((bruto, i) => {
+                      const e =
+                        typeof bruto === 'string' ? { nome: bruto } : bruto;
+                      return (
+                        <li
+                          key={i}
+                          className="flex items-center justify-between py-2 text-sm"
+                        >
+                          <span className="text-foreground/80">
+                            {e.nome ?? '—'}
+                            {e.cpf && (
+                              <span className="text-foreground/40">
+                                {' '}
+                                · {e.cpf}
+                              </span>
+                            )}
                           </span>
-                        )}
-                      </li>
-                    ))}
+                          {e.funcao && (
+                            <span className="text-foreground/50 text-xs">
+                              {e.funcao}
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
+                </Secao>
+              )}
+
+              {doc.dados_formulario && (
+                <Secao titulo="Dados do aviso (formulário do cliente)">
+                  <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                    {doc.dados_formulario.numero_apolice && (
+                      <Campo
+                        rotulo="Apólice"
+                        valor={doc.dados_formulario.numero_apolice}
+                      />
+                    )}
+                    {doc.dados_formulario.tipo_sinistro && (
+                      <Campo
+                        rotulo="Tipo"
+                        valor={doc.dados_formulario.tipo_sinistro}
+                      />
+                    )}
+                    {doc.dados_formulario.data_sinistro && (
+                      <Campo
+                        rotulo="Data"
+                        valor={formatData(doc.dados_formulario.data_sinistro)}
+                      />
+                    )}
+                    {doc.dados_formulario.local && (
+                      <Campo rotulo="Local" valor={doc.dados_formulario.local} />
+                    )}
+                    {doc.dados_formulario.contato && (
+                      <Campo
+                        rotulo="Contato"
+                        valor={doc.dados_formulario.contato}
+                      />
+                    )}
+                    <Campo
+                      rotulo="Terceiros"
+                      valor={doc.dados_formulario.terceiros_envolvidos ? 'Sim' : 'Não'}
+                    />
+                  </dl>
                 </Secao>
               )}
             </div>
@@ -183,10 +236,7 @@ export default function SinistroDetalhe({ id }: { id: string }) {
               <Secao titulo="Processamento">
                 <dl className="space-y-3">
                   {confianca != null && (
-                    <Campo
-                      rotulo="Confiança"
-                      valor={`${(confianca * 100).toFixed(0)}%`}
-                    />
+                    <Campo rotulo="Confiança" valor={`${confianca}%`} />
                   )}
                   {doc.processado_em && (
                     <Campo
