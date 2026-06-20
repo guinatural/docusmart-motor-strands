@@ -1,8 +1,8 @@
 # DocuSmart Web — Frontend
 
 Interface do **DocuSmart Intelligence** (Hack2Hire 2026). Triagem inteligente de
-sinistros de seguro auto. **Todos os dados são fictícios e mockados** — não há
-backend nem autenticação reais nesta camada.
+sinistros de seguro auto. Consome a **API real** (AWS API Gateway). Dados
+fictícios.
 
 ## Stack
 
@@ -17,35 +17,33 @@ npm install
 npm run dev   # http://localhost:3000
 ```
 
+## Configuração
+
+`NEXT_PUBLIC_API_BASE_URL` define a base da API (ver `.env.example`). Se ausente,
+usa o endpoint atual como fallback. Não há autenticação nesta camada (protótipo —
+o painel do analista usa um usuário fixo).
+
 ## Estrutura
 
 ```
-app/(public)/            # superfícies públicas (cliente, sem login)
-  page.tsx               #   upload do pacote → gera protocolo SIN-2026-xxxxx
-  acompanhar/            #   consulta o andamento por número de protocolo
-app/(private)/           # superfícies internas (analista) — sem auth no protótipo
+app/(public)/            # superfícies do cliente (sem login)
+  page.tsx               #   upload do pacote → gera protocolo (UUID)
+  acompanhar/            #   acompanha o andamento pelo protocolo (polling)
+app/(private)/           # painel do analista
   painel/                #   KPIs + tabela de sinistros + fila de revisão
-  painel/[numero]/       #   detalhe: documentos, validações (gates), decisão, auditoria
-  assistente/            #   chatbot SAC (respostas mockadas sobre o seed)
-lib/docusmart/           # domínio: types, constantes de negócio, seed e "mock-api"
-components/docusmart/    # componentes específicos do produto
+  painel/[numero]/       #   detalhe: documentos, gates, decisão, auditoria, aprovar/negar
+  assistente/            #   chat SAC
+lib/docusmart/           # api.ts (client real), constants, format
+components/docusmart/    # componentes do produto
 ```
 
-## Trocar o mock pelo backend real
+## Camada de dados
 
-Toda chamada de dados passa por `lib/docusmart/mock-api.ts`. Quando os endpoints
-da AWS (API Gateway) existirem, basta substituir o corpo dessas funções por
-`fetch`, mantendo as mesmas assinaturas — a UI não muda.
+Tudo passa por **`lib/docusmart/api.ts`** (client da API real). Endpoints:
+`POST /upload`, `POST /sinistro`, `GET /sinistro/{id}`, `GET /sinistros`,
+`PUT /sinistro/{id}`, `DELETE /sinistro/{id}`, `POST /chat`.
 
-## Dados de seed
+## Deploy
 
-6 apólices (gabarito) e 5 sinistros, cada um exercitando um gate da regra de
-negócio:
-
-| Protocolo      | Cenário                        | Status                   |
-| -------------- | ------------------------------ | ------------------------ |
-| SIN-2026-00123 | caminho feliz                  | Aprovado                 |
-| SIN-2026-00130 | faltam documentos obrigatórios | Pendente de documentação |
-| SIN-2026-00141 | data fora da vigência          | Em análise               |
-| SIN-2026-00155 | valor acima do teto            | Em análise               |
-| SIN-2026-00162 | baixa confiança na extração    | Em processamento         |
+Hospedado no **AWS Amplify** (build automático a cada push). Config em
+`../../amplify.yml` (monorepo, appRoot `frontend/docusmart-web`).

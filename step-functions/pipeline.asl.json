@@ -1,0 +1,69 @@
+{
+  "Comment": "DocuSmart — 1 sinistro, N documentos: processa cada documento (Map) e depois agrega + decide (Etapa 2).",
+  "StartAt": "ProcessarDocumentos",
+  "States": {
+    "ProcessarDocumentos": {
+      "Type": "Map",
+      "ItemsPath": "$.documentos",
+      "MaxConcurrency": 3,
+      "Parameters": {
+        "sinistro_id.$": "$.sinistro_id",
+        "bucket.$": "$.bucket",
+        "documento_id.$": "$$.Map.Item.Value.documento_id",
+        "key.$": "$$.Map.Item.Value.key"
+      },
+      "Iterator": {
+        "StartAt": "ProcessarDoc",
+        "States": {
+          "ProcessarDoc": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "Parameters": {
+              "FunctionName": "arn:aws:lambda:us-east-1:152160819260:function:docusmart-idp-grupo-5-processar-sinistro",
+              "Payload.$": "$"
+            },
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException",
+                  "Lambda.TooManyRequestsException"
+                ],
+                "IntervalSeconds": 3,
+                "MaxAttempts": 3,
+                "BackoffRate": 2
+              }
+            ],
+            "End": true
+          }
+        }
+      },
+      "ResultPath": null,
+      "Next": "AgregarEDecidir"
+    },
+    "AgregarEDecidir": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "arn:aws:lambda:us-east-1:152160819260:function:docusmart-idp-grupo-5-agregar-decisao",
+        "Payload": {
+          "sinistro_id.$": "$.sinistro_id"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 3,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "End": true
+    }
+  }
+}

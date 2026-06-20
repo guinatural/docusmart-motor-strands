@@ -1,23 +1,16 @@
-﻿[
-  {
-    "descricao": "Teste com Boletim de Ocorrência (PDF)",
-    "payload": {
-      "bucket": "docusmart-sinistros-152160819260",
-      "key": "uploads/boletim-ocorrencia.pdf"
-    }
+{
+  "_descricao": "Exemplo de payload do intake — POST /sinistro. As 'keys' vêm do POST /upload (presigned).",
+  "dados_formulario": {
+    "numero_apolice": "AP-2026-MFL-00123",
+    "tipo_sinistro": "colisao",
+    "data_sinistro": "2026-03-10",
+    "local": "Av. Hist. Rubens de Mendonça, Cuiabá-MT",
+    "terceiros_envolvidos": false,
+    "contato": "mariana.fulana.lima@email.com"
   },
-  {
-    "descricao": "Teste com Nota Fiscal (PDF)",
-    "payload": {
-      "bucket": "docusmart-sinistros-152160819260",
-      "key": "uploads/nota-fiscal.pdf"
-    }
-  },
-  {
-    "descricao": "Teste com foto de veículo (JPG)",
-    "payload": {
-      "bucket": "docusmart-sinistros-152160819260",
-      "key": "uploads/foto-veiculo.jpg"
-    }
-  }
-]
+  "keys": [
+    "uploads/<uuid>/cnh.jpg",
+    "uploads/<uuid>/crlv.jpg",
+    "uploads/<uuid>/orcamento.pdf"
+  ]
+}

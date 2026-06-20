@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 
+import PainelGraficos from '@/components/docusmart/painel-graficos';
 import StatusBadge from '@/components/docusmart/status-badge';
 import { APP_ROUTES } from '@/constants/app-routes';
 import { TIPO_SINISTRO } from '@/lib/docusmart/constants';
@@ -129,32 +130,34 @@ export default function PainelClient() {
         ))}
       </dl>
 
-      <div className="mt-6 flex flex-wrap items-center gap-2">
-        <span className="text-foreground/50 mr-1 text-sm font-medium">
-          Filtrar:
-        </span>
-        {filtros.map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFiltro(f.key)}
-            className={cn(
-              'rounded-full px-3 py-1 text-sm font-medium transition-colors',
-              filtro === f.key
-                ? 'bg-sky-600 text-white'
-                : 'bg-foreground/5 text-foreground/70 hover:bg-foreground/10',
-            )}
-          >
-            {f.label}
-          </button>
-        ))}
-        {sinistros !== null && (
-          <span className="text-foreground/40 ml-auto text-xs">
-            {visiveis.length} de {sinistros.length}
-          </span>
-        )}
-      </div>
+      {sinistros && sinistros.length > 0 && (
+        <PainelGraficos sinistros={sinistros} />
+      )}
 
-      <div className="bg-background inset-ring-foreground/10 mt-4 overflow-hidden rounded-xl shadow-sm inset-ring">
+      <div className="bg-background inset-ring-foreground/10 mt-6 overflow-hidden rounded-xl shadow-sm inset-ring">
+        {/* toolbar: filtros + contador */}
+        <div className="border-foreground/10 flex flex-wrap items-center gap-2 border-b p-3">
+          {filtros.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFiltro(f.key)}
+              className={cn(
+                'rounded-full px-3 py-1 text-sm font-medium transition-colors',
+                filtro === f.key
+                  ? 'bg-sky-600 text-white'
+                  : 'bg-foreground/5 text-foreground/70 hover:bg-foreground/10',
+              )}
+            >
+              {f.label}
+            </button>
+          ))}
+          {sinistros !== null && (
+            <span className="text-foreground/40 ml-auto text-xs">
+              {visiveis.length} de {sinistros.length}
+            </span>
+          )}
+        </div>
+
         {sinistros === null ? (
           <div className="space-y-3 p-4">
             {Array.from({ length: 5 }).map((_, i) => (
