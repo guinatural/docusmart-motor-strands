@@ -54,6 +54,10 @@ Parâmetros (env var): `LIMIAR_CONFIANCA=0.80`, `TETO_AUTO_APROVACAO=5000`.
 
 O analista revê os `EM_ANALISE`/`PENDENTE` e decide via `PUT` → `APROVADO`/`NEGADO`.
 
+Ao final da decisão, `agregar-decisao` **publica no SNS**
+(`docusmart-idp-grupo-5-notificacoes`) com sinistro, segurado, status, contato e
+motivo — base para notificar o cliente/equipe (ex.: e-mail inscrito no tópico).
+
 ## Contratos da API
 
 ```
@@ -63,6 +67,7 @@ POST /sinistro      { dados_formulario:{numero_apolice,tipo_sinistro,data_sinist
                       local,terceiros_envolvidos,contato}, keys:[...] }
                     → { sinistro_id, status:"EM_PROCESSAMENTO" }
 GET  /sinistro/{id} → { sinistro, documentos[], historico_operacoes[] }
+                      (cada documento inclui url_visualizacao: presigned GET, 5 min)
 GET  /sinistros     → { sinistros:[ ...SINISTRO... ] }
 PUT  /sinistro/{id} { status, observacao? } → { sinistro_id, status }
 DELETE /sinistro/{id} → { deleted:true, itens_removidos }
@@ -78,6 +83,12 @@ POST /chat          { message, session_id } → { response, session_id }
   texto dos documentos (ex.: cláusulas da apólice).
 
 Mantém histórico por `session_id` e lembra o último sinistro citado (follow-ups).
+As chamadas ao Converse passam por **Bedrock Guardrails**
+(`docusmart-idp-grupo-5-sac`), que filtra abuso, injeção de prompt e vazamento de
+dados/instruções.
+
+> Nota: usamos **Bedrock Converse** (não o Bedrock Agent) — o Agent gerenciado é
+> incompatível com o `Retrieve` da Knowledge Base S3 Vectors usada aqui.
 
 ## Decisões de design
 
