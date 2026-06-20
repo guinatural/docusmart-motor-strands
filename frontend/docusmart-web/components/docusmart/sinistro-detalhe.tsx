@@ -1,47 +1,40 @@
-import {
-  CheckCircleIcon,
-  XCircleIcon,
-} from '@heroicons/react/20/solid';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+'use client';
+
+import { ArrowLeftIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import React from 'react';
 
-import StatusBadge from '@/components/docusmart/status-badge';
-import Timeline from '@/components/docusmart/timeline';
+import OperacoesTimeline from '@/components/docusmart/operacoes-timeline';
+import PipelineBadge from '@/components/docusmart/pipeline-badge';
 import { APP_ROUTES } from '@/constants/app-routes';
+import { statusPipelineTerminal } from '@/lib/docusmart/constants';
+import { formatDataHora } from '@/lib/docusmart/format';
 import {
-  COBERTURA,
-  STATUS_DOC,
-  TIPO_SINISTRO,
-} from '@/lib/docusmart/constants';
-import {
-  formatBRL,
-  formatCpf,
-  formatData,
-} from '@/lib/docusmart/format';
-import type { SinistroDetalhe } from '@/lib/docusmart/mock-api';
-import type { Validacoes } from '@/lib/docusmart/types';
-import { cn } from '@/lib/utils';
+  obterDocumento,
+  parseConfianca,
+  type DocumentoResposta,
+} from '@/lib/docusmart/api';
 
-function Gate({ ok, label }: { ok: boolean; label: string }) {
-  return (
-    <li className="flex items-center gap-2 text-sm">
-      {ok ? (
-        <CheckCircleIcon className="size-5 shrink-0 text-emerald-500" />
-      ) : (
-        <XCircleIcon className="size-5 shrink-0 text-red-500" />
-      )}
-      <span className={cn('text-foreground/80', !ok && 'text-red-600 dark:text-red-400')}>
-        {label}
-      </span>
-    </li>
-  );
-}
+const POLL_MS = 5000;
+
+const CAMPOS: { chave: string; rotulo: string }[] = [
+  { chave: 'marca_modelo', rotulo: 'Veículo' },
+  { chave: 'placa_veiculo', rotulo: 'Placa' },
+  { chave: 'ano', rotulo: 'Ano' },
+  { chave: 'cor', rotulo: 'Cor' },
+  { chave: 'renavam', rotulo: 'RENAVAM' },
+  { chave: 'chassi', rotulo: 'Chassi' },
+  { chave: 'local', rotulo: 'Local' },
+  { chave: 'valor_prejuizo', rotulo: 'Valor do prejuízo' },
+];
 
 function Campo({ rotulo, valor }: { rotulo: string; valor: React.ReactNode }) {
   return (
     <div>
       <dt className="text-foreground/50 text-xs">{rotulo}</dt>
-      <dd className="text-foreground mt-0.5 text-sm font-medium">{valor}</dd>
+      <dd className="text-foreground mt-0.5 text-sm font-medium break-words">
+        {valor}
+      </dd>
     </div>
   );
 }
@@ -49,40 +42,56 @@ function Campo({ rotulo, valor }: { rotulo: string; valor: React.ReactNode }) {
 function Secao({
   titulo,
   children,
-  className,
 }: {
   titulo: string;
   children: React.ReactNode;
-  className?: string;
 }) {
   return (
-    <section
-      className={cn(
-        'bg-background inset-ring-foreground/10 rounded-xl p-5 shadow-sm inset-ring',
-        className,
-      )}
-    >
+    <section className="bg-background inset-ring-foreground/10 rounded-xl p-5 shadow-sm inset-ring">
       <h2 className="text-foreground mb-4 text-sm font-semibold">{titulo}</h2>
       {children}
     </section>
   );
 }
 
-const GATE_LABELS: { key: keyof Validacoes; label: string }[] = [
-  { key: 'documentos_completos', label: 'Documentos obrigatórios completos' },
-  { key: 'consistencia_cpf', label: 'CPF consistente com a apólice' },
-  { key: 'consistencia_placa', label: 'Placa consistente com a apólice' },
-  { key: 'data_dentro_vigencia', label: 'Data dentro da vigência' },
-  { key: 'dentro_do_teto', label: 'Valor dentro do teto de auto-aprovação' },
-];
+export default function SinistroDetalhe({ id }: { id: string }) {
+  const [detalhe, setDetalhe] = React.useState<DocumentoResposta | null>(null);
+  const [erro, setErro] = React.useState<string | null>(null);
+  const [carregando, setCarregando] = React.useState(true);
 
-export default function SinistroDetalheView({
-  detalhe,
-}: {
-  detalhe: SinistroDetalhe;
-}) {
-  const { sinistro, apolice, documentos, operacoes } = detalhe;
-  const dc = sinistro.dados_consolidados;
+  const buscar = React.useCallback(
+    async (silencioso = false) => {
+      try {
+        const r = await obterDocumento(id);
+        setDetalhe(r);
+        setErro(null);
+      } catch (e) {
+        if (!silencioso)
+          setErro(e instanceof Error ? e.message : 'Falha na consulta.');
+      } finally {
+        if (!silencioso) setCarregando(false);
+      }
+    },
+    [id],
+  );
+
+  React.useEffect(() => {
+    buscar();
+  }, [buscar]);
+
+  React.useEffect(() => {
+    if (!detalhe) return;
+    if (statusPipelineTerminal(detalhe.documento.status_pipeline)) return;
+    const t = setTimeout(() => buscar(true), POLL_MS);
+    return () => clearTimeout(t);
+  }, [detalhe, buscar]);
+
+  const doc = detalhe?.documento;
+  const campos = doc?.campos_extraidos ?? {};
+  const envolvidos = campos.envolvidos ?? [];
+  const confianca = parseConfianca(doc?.confianca);
+  const processando =
+    doc != null && !statusPipelineTerminal(doc.status_pipeline);
 
   return (
     <div>
@@ -93,203 +102,118 @@ export default function SinistroDetalheView({
         <ArrowLeftIcon className="size-4" /> Voltar ao painel
       </Link>
 
-      {/* cabeçalho */}
-      <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-foreground font-mono text-2xl font-semibold">
-            {sinistro.numero_sinistro}
-          </h1>
-          <p className="text-foreground/60 mt-1 text-sm">
-            {TIPO_SINISTRO[sinistro.tipo_sinistro]} ·{' '}
-            {formatData(sinistro.data_sinistro)} · Apólice{' '}
-            {sinistro.numero_apolice}
-          </p>
-        </div>
-        <StatusBadge status={sinistro.status} className="mt-1" />
-      </div>
-
-      {/* decisão */}
-      {dc ? (
-        <div
-          className={cn(
-            'mt-6 rounded-xl p-4 text-sm',
-            dc.decisao.automatica
-              ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
-              : 'bg-amber-500/10 text-amber-800 dark:text-amber-300',
-          )}
-        >
-          <p className="font-semibold">
-            Decisão: {dc.decisao.status.replace(/_/g, ' ')}{' '}
-            <span className="font-normal opacity-70">
-              ({dc.decisao.automatica ? 'automática' : 'requer analista'})
-            </span>
-          </p>
-          <p className="mt-1 opacity-90">{dc.decisao.motivo}</p>
-        </div>
+      {carregando ? (
+        <p className="text-foreground/50 mt-6 text-sm">Carregando…</p>
+      ) : erro ? (
+        <p className="mt-6 text-sm text-red-600">{erro}</p>
+      ) : !doc ? (
+        <p className="text-foreground/50 mt-6 text-sm">
+          Sinistro não encontrado.
+        </p>
       ) : (
-        <div className="mt-6 rounded-xl bg-blue-500/10 p-4 text-sm text-blue-800 dark:text-blue-300">
-          <p className="font-semibold">Em processamento</p>
-          <p className="mt-1 opacity-90">
-            Há documento com baixa confiança aguardando revisão humana antes de
-            consolidar o sinistro.
-          </p>
-        </div>
-      )}
-
-      <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
-        {/* coluna principal */}
-        <div className="space-y-5 lg:col-span-2">
-          {/* dados do segurado e veículo */}
-          <Secao titulo="Segurado, veículo e evento">
-            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <Campo
-                rotulo="Segurado"
-                valor={apolice?.nome_titular ?? dc?.segurado.nome ?? '—'}
-              />
-              <Campo
-                rotulo="CPF"
-                valor={apolice ? formatCpf(apolice.cpf_titular) : '—'}
-              />
-              <Campo rotulo="Contato" valor={apolice?.contato ?? '—'} />
-              <Campo
-                rotulo="Veículo"
-                valor={apolice?.veiculo.marca_modelo ?? dc?.veiculo.marca_modelo ?? '—'}
-              />
-              <Campo
-                rotulo="Placa"
-                valor={apolice?.veiculo.placa ?? dc?.veiculo.placa ?? '—'}
-              />
-              <Campo
-                rotulo="Cobertura"
-                valor={apolice ? COBERTURA[apolice.cobertura] : '—'}
-              />
-              <Campo
-                rotulo="Local"
-                valor={String(
-                  (sinistro.contexto as { local?: string }).local ?? '—',
-                )}
-              />
-              <Campo
-                rotulo="Terceiros"
-                valor={
-                  (sinistro.contexto as { terceiros_envolvidos?: boolean })
-                    .terceiros_envolvidos
-                    ? 'Sim'
-                    : 'Não'
-                }
-              />
-              {apolice && (
-                <Campo
-                  rotulo="Vigência"
-                  valor={`${formatData(apolice.vigencia.inicio)} – ${formatData(
-                    apolice.vigencia.fim,
-                  )}`}
-                />
-              )}
-            </dl>
-          </Secao>
-
-          {/* documentos */}
-          <Secao titulo={`Documentos (${documentos.length})`}>
-            <div className="-mx-5 overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="text-foreground/50 text-left text-xs uppercase">
-                    <th className="px-5 py-2 font-medium">Doc</th>
-                    <th className="px-5 py-2 font-medium">Tipo</th>
-                    <th className="px-5 py-2 font-medium">Confiança</th>
-                    <th className="px-5 py-2 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-foreground/5">
-                  {documentos.map((d) => (
-                    <tr key={d.documento_id}>
-                      <td className="text-foreground/70 px-5 py-2.5 font-mono">
-                        {d.documento_id}
-                      </td>
-                      <td className="text-foreground/80 px-5 py-2.5">
-                        {d.tipo_documento}
-                      </td>
-                      <td className="px-5 py-2.5 tabular-nums">
-                        <span
-                          className={cn(
-                            d.score_classificacao < 0.8
-                              ? 'text-red-600 dark:text-red-400'
-                              : 'text-foreground/70',
-                          )}
-                        >
-                          {(d.score_classificacao * 100).toFixed(0)}%
-                        </span>
-                      </td>
-                      <td className="px-5 py-2.5">
-                        <span
-                          className={cn(
-                            'text-xs font-medium',
-                            d.status_doc === 'revisao_pendente'
-                              ? 'text-amber-600 dark:text-amber-400'
-                              : 'text-foreground/60',
-                          )}
-                        >
-                          {STATUS_DOC[d.status_doc]}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <>
+          <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-foreground font-mono text-lg font-semibold break-all">
+                {doc.sinistro_id ?? doc.id ?? id}
+              </h1>
+              <p className="text-foreground/60 mt-1 text-sm">
+                {doc.tipo_documento ?? 'Documento'}
+                {confianca != null &&
+                  ` · ${(confianca * 100).toFixed(0)}% confiança`}
+              </p>
             </div>
-          </Secao>
+            <PipelineBadge status={doc.status_pipeline} className="mt-1" />
+          </div>
 
-          {/* orçamentos */}
-          {dc && dc.orcamentos.length > 0 && (
-            <Secao titulo="Orçamentos">
-              <ul className="divide-y divide-foreground/5">
-                {dc.orcamentos.map((o, i) => (
-                  <li
-                    key={i}
-                    className="flex items-center justify-between py-2 text-sm"
-                  >
-                    <span className="text-foreground/80">{o.oficina}</span>
-                    <span className="text-foreground tabular-nums font-medium">
-                      {formatBRL(o.valor_total)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              {dc.orcamentos.length > 1 && (
-                <p className="text-foreground/50 mt-3 text-xs">
-                  Valor de referência (menor, conservador):{' '}
-                  <span className="text-foreground font-medium">
-                    {formatBRL(dc.valor_referencia)}
-                  </span>
-                </p>
-              )}
-            </Secao>
-          )}
-        </div>
-
-        {/* coluna lateral */}
-        <div className="space-y-5">
-          {dc && (
-            <Secao titulo="Validações (gates)">
-              <ul className="space-y-2.5">
-                {GATE_LABELS.map((g) => (
-                  <Gate key={g.key} ok={dc.validacoes[g.key] as boolean} label={g.label} />
-                ))}
-              </ul>
-              {dc.validacoes.documentos_faltantes.length > 0 && (
-                <p className="mt-3 rounded-md bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
-                  Faltantes: {dc.validacoes.documentos_faltantes.join(', ')}
-                </p>
-              )}
-            </Secao>
+          {processando && (
+            <div className="mt-6 flex items-center gap-2 rounded-xl bg-blue-500/10 p-4 text-sm text-blue-700 dark:text-blue-300">
+              <ArrowPathIcon className="size-4 animate-spin" />
+              Pipeline em execução — atualizando automaticamente.
+            </div>
           )}
 
-          <Secao titulo="Auditoria (operações)">
-            <Timeline operacoes={operacoes} />
-          </Secao>
-        </div>
-      </div>
+          <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-3">
+            <div className="space-y-5 lg:col-span-2">
+              {doc.resumo && (
+                <Secao titulo="Resumo">
+                  <p className="text-foreground/80 text-sm">{doc.resumo}</p>
+                </Secao>
+              )}
+
+              <Secao titulo="Dados extraídos">
+                <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                  {CAMPOS.map((c) => {
+                    const v = campos[c.chave];
+                    if (v == null || v === '') return null;
+                    return (
+                      <Campo key={c.chave} rotulo={c.rotulo} valor={String(v)} />
+                    );
+                  })}
+                </dl>
+              </Secao>
+
+              {envolvidos.length > 0 && (
+                <Secao titulo="Envolvidos">
+                  <ul className="divide-y divide-foreground/5">
+                    {envolvidos.map((e, i) => (
+                      <li
+                        key={i}
+                        className="flex items-center justify-between py-2 text-sm"
+                      >
+                        <span className="text-foreground/80">
+                          {e.nome ?? '—'}
+                          {e.cpf && (
+                            <span className="text-foreground/40"> · {e.cpf}</span>
+                          )}
+                        </span>
+                        {e.funcao && (
+                          <span className="text-foreground/50 text-xs">
+                            {e.funcao}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </Secao>
+              )}
+            </div>
+
+            <div className="space-y-5">
+              <Secao titulo="Processamento">
+                <dl className="space-y-3">
+                  {confianca != null && (
+                    <Campo
+                      rotulo="Confiança"
+                      valor={`${(confianca * 100).toFixed(0)}%`}
+                    />
+                  )}
+                  {doc.processado_em && (
+                    <Campo
+                      rotulo="Processado em"
+                      valor={formatDataHora(doc.processado_em)}
+                    />
+                  )}
+                  {doc.s3_origem?.key && (
+                    <Campo
+                      rotulo="Arquivo (S3)"
+                      valor={
+                        <span className="font-mono text-xs">
+                          {doc.s3_origem.key}
+                        </span>
+                      }
+                    />
+                  )}
+                </dl>
+              </Secao>
+
+              <Secao titulo="Auditoria (operações)">
+                <OperacoesTimeline operacoes={detalhe.historico_operacoes} />
+              </Secao>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

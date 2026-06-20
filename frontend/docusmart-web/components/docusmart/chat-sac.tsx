@@ -3,16 +3,19 @@
 import { PaperAirplaneIcon, SparklesIcon } from '@heroicons/react/24/solid';
 import React from 'react';
 
-import {
-  PERGUNTAS_SUGERIDAS,
-  perguntarAgente,
-} from '@/lib/docusmart/mock-api';
+import { novaSessaoChat, perguntarAgenteApi } from '@/lib/docusmart/api';
 import { cn } from '@/lib/utils';
+
+const PERGUNTAS_SUGERIDAS = [
+  'Resuma os sinistros mais recentes',
+  'Quais documentos tiveram baixa confiança?',
+  'Quantos sinistros já foram processados?',
+  'Quais operações foram registradas hoje?',
+];
 
 interface Mensagem {
   autor: 'usuario' | 'agente';
   texto: string;
-  fonte?: string;
 }
 
 const SAUDACAO: Mensagem = {
@@ -25,6 +28,7 @@ export default function ChatSac() {
   const [mensagens, setMensagens] = React.useState<Mensagem[]>([SAUDACAO]);
   const [input, setInput] = React.useState('');
   const [pensando, setPensando] = React.useState(false);
+  const sessionId = React.useRef(novaSessaoChat());
   const fimRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -37,12 +41,23 @@ export default function ChatSac() {
     setMensagens((m) => [...m, { autor: 'usuario', texto }]);
     setInput('');
     setPensando(true);
-    const r = await perguntarAgente(texto);
-    setPensando(false);
-    setMensagens((m) => [
-      ...m,
-      { autor: 'agente', texto: r.resposta, fonte: r.fonte },
-    ]);
+    try {
+      const r = await perguntarAgenteApi(texto, sessionId.current);
+      setMensagens((m) => [...m, { autor: 'agente', texto: r.resposta }]);
+    } catch (err) {
+      setMensagens((m) => [
+        ...m,
+        {
+          autor: 'agente',
+          texto:
+            err instanceof Error
+              ? `⚠️ ${err.message}`
+              : '⚠️ Não foi possível falar com o assistente agora.',
+        },
+      ]);
+    } finally {
+      setPensando(false);
+    }
   }
 
   return (
@@ -76,10 +91,7 @@ export default function ChatSac() {
                   : 'bg-foreground/5 text-foreground',
               )}
             >
-              <p>{m.texto}</p>
-              {m.fonte && m.fonte !== '—' && (
-                <p className="mt-1.5 text-xs opacity-60">via {m.fonte}</p>
-              )}
+              <p className="whitespace-pre-wrap">{m.texto}</p>
             </div>
           </div>
         ))}

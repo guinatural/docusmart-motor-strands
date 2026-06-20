@@ -1,44 +1,74 @@
 'use client';
 
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useSearchParams } from 'next/navigation';
 import React from 'react';
 
-import StatusBadge from '@/components/docusmart/status-badge';
-import Timeline from '@/components/docusmart/timeline';
+import OperacoesTimeline from '@/components/docusmart/operacoes-timeline';
+import PipelineBadge from '@/components/docusmart/pipeline-badge';
 import Button from '@/components/ui/button';
 import InputWithLabel from '@/components/ui/input';
-import { TIPO_SINISTRO } from '@/lib/docusmart/constants';
-import { formatData } from '@/lib/docusmart/format';
-import { obterSinistro, type SinistroDetalhe } from '@/lib/docusmart/mock-api';
+import { statusPipelineTerminal } from '@/lib/docusmart/constants';
+import { formatDataHora } from '@/lib/docusmart/format';
+import {
+  obterDocumento,
+  parseConfianca,
+  type DocumentoResposta,
+} from '@/lib/docusmart/api';
+
+const POLL_MS = 5000;
 
 export default function AcompanharClient() {
   const params = useSearchParams();
   const [numero, setNumero] = React.useState(params.get('n') ?? '');
   const [buscando, setBuscando] = React.useState(false);
-  const [detalhe, setDetalhe] = React.useState<SinistroDetalhe | null>(null);
+  const [detalhe, setDetalhe] = React.useState<DocumentoResposta | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
+  const alvoRef = React.useRef<string>('');
 
-  const buscar = React.useCallback(async (n: string) => {
-    const alvo = n.trim().toUpperCase();
-    if (!alvo) return;
-    setBuscando(true);
-    setErro(null);
-    const r = await obterSinistro(alvo);
-    setBuscando(false);
-    if (!r) {
-      setDetalhe(null);
-      setErro(`Nenhum sinistro encontrado para "${alvo}".`);
-      return;
-    }
-    setDetalhe(r);
-  }, []);
+  const buscar = React.useCallback(
+    async (id: string, silencioso = false) => {
+      const alvo = id.trim();
+      if (!alvo) return;
+      alvoRef.current = alvo;
+      if (!silencioso) {
+        setBuscando(true);
+        setErro(null);
+      }
+      try {
+        const r = await obterDocumento(alvo);
+        setDetalhe(r);
+      } catch (e) {
+        if (!silencioso) {
+          setDetalhe(null);
+          setErro(e instanceof Error ? e.message : 'Falha na consulta.');
+        }
+      } finally {
+        if (!silencioso) setBuscando(false);
+      }
+    },
+    [],
+  );
 
   // auto-busca quando chega com ?n= na URL (vindo do upload)
   React.useEffect(() => {
     const n = params.get('n');
     if (n) buscar(n);
   }, [params, buscar]);
+
+  // polling enquanto o pipeline não terminou
+  React.useEffect(() => {
+    if (!detalhe) return;
+    if (statusPipelineTerminal(detalhe.documento.status_pipeline)) return;
+    const t = setTimeout(() => buscar(alvoRef.current, true), POLL_MS);
+    return () => clearTimeout(t);
+  }, [detalhe, buscar]);
+
+  const doc = detalhe?.documento;
+  const processando =
+    doc != null && !statusPipelineTerminal(doc.status_pipeline);
+  const confianca = parseConfianca(doc?.confianca);
+  const segurado = doc?.campos_extraidos?.envolvidos?.[0]?.nome;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
@@ -60,7 +90,7 @@ export default function AcompanharClient() {
           <InputWithLabel
             id="protocolo"
             label="Protocolo"
-            placeholder="SIN-2026-00123"
+            placeholder="cole o número do protocolo"
             value={numero}
             onChange={(e) => setNumero(e.target.value)}
           />
@@ -77,33 +107,50 @@ export default function AcompanharClient() {
         </p>
       )}
 
-      {detalhe && (
+      {detalhe && doc && (
         <div className="bg-background inset-ring-foreground/10 mt-8 rounded-2xl p-6 shadow-sm inset-ring">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-foreground font-mono text-lg font-semibold">
-                {detalhe.sinistro.numero_sinistro}
+            <div className="min-w-0">
+              <p className="text-foreground font-mono text-sm font-semibold break-all">
+                {doc.sinistro_id ?? doc.id ?? alvoRef.current}
               </p>
-              <p className="text-foreground/60 text-sm">
-                {TIPO_SINISTRO[detalhe.sinistro.tipo_sinistro]} ·{' '}
-                {formatData(detalhe.sinistro.data_sinistro)}
-              </p>
+              {doc.tipo_documento && (
+                <p className="text-foreground/60 mt-0.5 text-sm">
+                  {doc.tipo_documento}
+                  {confianca != null && ` · ${(confianca * 100).toFixed(0)}% confiança`}
+                </p>
+              )}
             </div>
-            <StatusBadge status={detalhe.sinistro.status} />
+            <PipelineBadge status={doc.status_pipeline} />
           </div>
 
-          {detalhe.sinistro.documentos_faltantes.length > 0 && (
-            <div className="mt-4 rounded-lg bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
-              <strong>Documentos pendentes:</strong>{' '}
-              {detalhe.sinistro.documentos_faltantes.join(', ')}. Reenvie para
-              dar andamento.
+          {processando && (
+            <div className="mt-4 flex items-center gap-2 rounded-lg bg-blue-500/10 px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
+              <ArrowPathIcon className="size-4 animate-spin" />
+              Processando seus documentos… esta página atualiza sozinha.
             </div>
+          )}
+
+          {segurado && (
+            <p className="text-foreground/70 mt-4 text-sm">
+              <span className="text-foreground/50">Segurado:</span> {segurado}
+            </p>
+          )}
+
+          {doc.resumo && (
+            <p className="text-foreground/80 mt-3 text-sm">{doc.resumo}</p>
+          )}
+
+          {doc.processado_em && (
+            <p className="text-foreground/40 mt-3 text-xs">
+              Processado em {formatDataHora(doc.processado_em)}
+            </p>
           )}
 
           <h2 className="text-foreground mt-6 mb-4 text-sm font-semibold">
             Andamento
           </h2>
-          <Timeline operacoes={detalhe.operacoes} />
+          <OperacoesTimeline operacoes={detalhe.historico_operacoes} />
         </div>
       )}
     </div>

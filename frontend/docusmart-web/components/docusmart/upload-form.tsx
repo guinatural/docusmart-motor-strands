@@ -13,9 +13,13 @@ import Button from '@/components/ui/button';
 import InputWithLabel from '@/components/ui/input';
 import { APP_ROUTES } from '@/constants/app-routes';
 import DatePicker from '@/components/docusmart/date-picker';
-import StatusBadge from '@/components/docusmart/status-badge';
+import PipelineBadge from '@/components/docusmart/pipeline-badge';
 import { TIPO_SINISTRO } from '@/lib/docusmart/constants';
-import { criarSinistro, type IntakeResultado } from '@/lib/docusmart/mock-api';
+import {
+  criarSinistroApi,
+  uploadPacote,
+  type IntakeResposta,
+} from '@/lib/docusmart/api';
 import type { TipoSinistro } from '@/lib/docusmart/types';
 import { notifyError } from '@/lib/ui/notifications';
 import { cn } from '@/lib/utils';
@@ -27,42 +31,58 @@ export default function UploadForm() {
   const [local, setLocal] = React.useState('');
   const [contato, setContato] = React.useState('');
   const [terceiros, setTerceiros] = React.useState(false);
-  const [arquivos, setArquivos] = React.useState<string[]>([]);
+  const [arquivos, setArquivos] = React.useState<File[]>([]);
   const [enviando, setEnviando] = React.useState(false);
-  const [resultado, setResultado] = React.useState<IntakeResultado | null>(null);
+  const [resultado, setResultado] = React.useState<IntakeResposta | null>(null);
 
   function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    const nomes = Array.from(e.target.files ?? []).map((f) => f.name);
-    setArquivos((prev) => Array.from(new Set([...prev, ...nomes])));
+    const novos = Array.from(e.target.files ?? []);
+    setArquivos((prev) => {
+      const nomes = new Set(prev.map((f) => f.name));
+      return [...prev, ...novos.filter((f) => !nomes.has(f.name))];
+    });
     e.target.value = '';
   }
 
   function removerArquivo(nome: string) {
-    setArquivos((prev) => prev.filter((a) => a !== nome));
+    setArquivos((prev) => prev.filter((a) => a.name !== nome));
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setEnviando(true);
-    const r = await criarSinistro({
-      numero_apolice: numeroApolice,
-      tipo_sinistro: tipoSinistro,
-      data_sinistro: dataSinistro,
-      local,
-      terceiros_envolvidos: terceiros,
-      contato,
-      arquivos,
-    });
-    setEnviando(false);
-    if (!r.ok) {
-      notifyError(r.erro ?? 'Não foi possível registrar o sinistro.');
+    if (arquivos.length === 0) {
+      notifyError('Anexe ao menos um documento do pacote.');
       return;
     }
-    setResultado(r);
+    setEnviando(true);
+    try {
+      // 1) Upload real dos arquivos pro S3 (presigned URL via API Gateway)
+      const keys = await uploadPacote(arquivos);
+
+      // 2) Intake: cria o sinistro e dispara o pipeline
+      const r = await criarSinistroApi(
+        {
+          numero_apolice: numeroApolice,
+          tipo_sinistro: tipoSinistro,
+          data_sinistro: dataSinistro,
+          local,
+          terceiros_envolvidos: terceiros,
+          contato,
+        },
+        keys,
+      );
+      setResultado(r);
+    } catch (err) {
+      notifyError(
+        err instanceof Error ? err.message : 'Falha no envio dos documentos.',
+      );
+    } finally {
+      setEnviando(false);
+    }
   }
 
   // ── Tela de protocolo gerado ───────────────────────────────────────────────
-  if (resultado?.ok && resultado.numero_sinistro) {
+  if (resultado?.sinistro_id) {
     return (
       <div className="bg-background inset-ring-foreground/10 rounded-2xl p-8 shadow-sm inset-ring">
         <div className="flex flex-col items-center text-center">
@@ -78,17 +98,17 @@ export default function UploadForm() {
             <p className="text-foreground/50 text-xs tracking-wide uppercase">
               Protocolo do sinistro
             </p>
-            <p className="text-foreground mt-1 font-mono text-2xl font-semibold">
-              {resultado.numero_sinistro}
+            <p className="text-foreground mt-1 font-mono text-lg font-semibold break-all">
+              {resultado.sinistro_id}
             </p>
             <div className="mt-3">
-              <StatusBadge status={resultado.status ?? 'EM_PROCESSAMENTO'} />
+              <PipelineBadge status={resultado.status} />
             </div>
           </div>
 
           <div className="mt-6 flex w-full flex-col gap-2 sm:flex-row sm:justify-center">
             <Link
-              href={`${APP_ROUTES.PUBLIC.ACOMPANHAR}?n=${resultado.numero_sinistro}`}
+              href={`${APP_ROUTES.PUBLIC.ACOMPANHAR}?n=${resultado.sinistro_id}`}
             >
               <Button className="w-full sm:w-auto">Acompanhar sinistro</Button>
             </Link>
@@ -202,7 +222,7 @@ export default function UploadForm() {
             Clique para anexar (CNH, CRLV, orçamento, BO…)
           </span>
           <span className="text-foreground/40 mt-1 text-xs">
-            PDF ou imagem — protótipo, os arquivos não são enviados
+            PDF ou imagem — enviados com segurança para o S3
           </span>
           <input
             id="arquivos"
@@ -216,20 +236,20 @@ export default function UploadForm() {
 
         {arquivos.length > 0 && (
           <ul className="mt-3 space-y-2">
-            {arquivos.map((nome) => (
+            {arquivos.map((arquivo) => (
               <li
-                key={nome}
+                key={arquivo.name}
                 className="bg-foreground/5 flex items-center justify-between rounded-md px-3 py-2 text-sm"
               >
                 <span className="flex min-w-0 items-center gap-2">
                   <DocumentIcon className="text-foreground/40 size-4 shrink-0" />
-                  <span className="truncate">{nome}</span>
+                  <span className="truncate">{arquivo.name}</span>
                 </span>
                 <button
                   type="button"
-                  onClick={() => removerArquivo(nome)}
+                  onClick={() => removerArquivo(arquivo.name)}
                   className="text-foreground/40 hover:text-foreground"
-                  aria-label={`Remover ${nome}`}
+                  aria-label={`Remover ${arquivo.name}`}
                 >
                   <XMarkIcon className="size-4" />
                 </button>
@@ -245,11 +265,11 @@ export default function UploadForm() {
         disabled={enviando}
         className={cn('w-full', enviando && 'opacity-70')}
       >
-        {enviando ? 'Registrando…' : 'Registrar sinistro'}
+        {enviando ? 'Enviando documentos…' : 'Registrar sinistro'}
       </Button>
 
       <p className="text-foreground/50 text-center text-xs">
-        Apólices de teste: AP-2024-5567 · AP-2024-7702 · AP-2025-1180
+        Seus documentos são processados automaticamente após o envio.
       </p>
     </form>
   );

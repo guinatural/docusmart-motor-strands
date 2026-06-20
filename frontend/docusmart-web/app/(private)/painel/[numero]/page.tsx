@@ -1,7 +1,4 @@
-import { notFound } from 'next/navigation';
-
-import SinistroDetalheView from '@/components/docusmart/sinistro-detalhe';
-import { obterSinistro } from '@/lib/docusmart/mock-api';
+import SinistroDetalhe from '@/components/docusmart/sinistro-detalhe';
 
 export default async function SinistroPage({
   params,
@@ -9,7 +6,5 @@ export default async function SinistroPage({
   params: Promise<{ numero: string }>;
 }) {
   const { numero } = await params;
-  const detalhe = await obterSinistro(decodeURIComponent(numero));
-  if (!detalhe) notFound();
-  return <SinistroDetalheView detalhe={detalhe} />;
+  return <SinistroDetalhe id={decodeURIComponent(numero)} />;
 }

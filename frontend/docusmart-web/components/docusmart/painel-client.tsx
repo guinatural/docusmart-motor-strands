@@ -1,77 +1,106 @@
 'use client';
 
 import {
+  ArrowPathIcon,
   CheckCircleIcon,
-  ClockIcon,
   DocumentTextIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import React from 'react';
 
-import StatusBadge from '@/components/docusmart/status-badge';
+import PipelineBadge from '@/components/docusmart/pipeline-badge';
 import { APP_ROUTES } from '@/constants/app-routes';
-import { STATUS_SINISTRO, TIPO_SINISTRO } from '@/lib/docusmart/constants';
-import { formatBRL, formatData } from '@/lib/docusmart/format';
-import { listarSinistros } from '@/lib/docusmart/mock-api';
-import type { Sinistro, StatusSinistro } from '@/lib/docusmart/types';
+import { statusPipelineMeta } from '@/lib/docusmart/constants';
+import { formatDataHora } from '@/lib/docusmart/format';
+import {
+  listarSinistrosApi,
+  parseConfianca,
+  type DocumentoApi,
+} from '@/lib/docusmart/api';
 import { cn } from '@/lib/utils';
 
-const REQUER_ATENCAO: StatusSinistro[] = [
-  'PENDENTE_DOCUMENTACAO',
-  'EM_ANALISE',
-  'EM_PROCESSAMENTO',
-];
+type Filtro = 'TODOS' | 'success' | 'andamento' | 'danger';
 
-type Filtro = 'TODOS' | 'ATENCAO' | StatusSinistro;
+function idDe(s: DocumentoApi): string {
+  return (s.sinistro_id ?? s.id ?? '') as string;
+}
 
 export default function PainelClient() {
-  const [sinistros, setSinistros] = React.useState<Sinistro[] | null>(null);
+  const [sinistros, setSinistros] = React.useState<DocumentoApi[] | null>(null);
+  const [erro, setErro] = React.useState<string | null>(null);
   const [filtro, setFiltro] = React.useState<Filtro>('TODOS');
 
-  React.useEffect(() => {
-    listarSinistros().then(setSinistros);
+  const carregar = React.useCallback(async () => {
+    setErro(null);
+    try {
+      setSinistros(await listarSinistrosApi());
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : 'Falha ao carregar.');
+      setSinistros([]);
+    }
   }, []);
+
+  React.useEffect(() => {
+    carregar();
+  }, [carregar]);
 
   const kpis = React.useMemo(() => {
     const lista = sinistros ?? [];
+    const tone = (s: DocumentoApi) => statusPipelineMeta(s.status_pipeline).tone;
     return {
       total: lista.length,
-      atencao: lista.filter((s) => REQUER_ATENCAO.includes(s.status)).length,
-      aprovados: lista.filter((s) => s.status === 'APROVADO').length,
-      valor: lista.reduce((acc, s) => acc + (s.valor_total_orcamentos ?? 0), 0),
+      processados: lista.filter((s) => tone(s) === 'success').length,
+      andamento: lista.filter((s) => ['info', 'warning'].includes(tone(s)))
+        .length,
+      falhas: lista.filter((s) => tone(s) === 'danger').length,
     };
   }, [sinistros]);
 
   const visiveis = React.useMemo(() => {
     const lista = sinistros ?? [];
     if (filtro === 'TODOS') return lista;
-    if (filtro === 'ATENCAO')
-      return lista.filter((s) => REQUER_ATENCAO.includes(s.status));
-    return lista.filter((s) => s.status === filtro);
+    if (filtro === 'andamento')
+      return lista.filter((s) =>
+        ['info', 'warning'].includes(statusPipelineMeta(s.status_pipeline).tone),
+      );
+    return lista.filter(
+      (s) => statusPipelineMeta(s.status_pipeline).tone === filtro,
+    );
   }, [sinistros, filtro]);
 
   const cards = [
     { label: 'Sinistros', valor: kpis.total, icon: DocumentTextIcon, tone: 'text-sky-500' },
-    { label: 'Fila de revisão', valor: kpis.atencao, icon: ExclamationTriangleIcon, tone: 'text-amber-500' },
-    { label: 'Aprovados', valor: kpis.aprovados, icon: CheckCircleIcon, tone: 'text-emerald-500' },
-    { label: 'Total em orçamentos', valor: formatBRL(kpis.valor), icon: ClockIcon, tone: 'text-blue-500' },
+    { label: 'Em andamento', valor: kpis.andamento, icon: ArrowPathIcon, tone: 'text-blue-500' },
+    { label: 'Processados', valor: kpis.processados, icon: CheckCircleIcon, tone: 'text-emerald-500' },
+    { label: 'Falhas', valor: kpis.falhas, icon: ExclamationTriangleIcon, tone: 'text-red-500' },
   ];
 
   const filtros: { key: Filtro; label: string }[] = [
     { key: 'TODOS', label: 'Todos' },
-    { key: 'ATENCAO', label: 'Fila de revisão' },
-    { key: 'APROVADO', label: STATUS_SINISTRO.APROVADO.label },
-    { key: 'EM_ANALISE', label: STATUS_SINISTRO.EM_ANALISE.label },
-    { key: 'PENDENTE_DOCUMENTACAO', label: STATUS_SINISTRO.PENDENTE_DOCUMENTACAO.label },
+    { key: 'andamento', label: 'Em andamento' },
+    { key: 'success', label: 'Processados' },
+    { key: 'danger', label: 'Falhas' },
   ];
 
   return (
     <div>
-      <h1 className="text-foreground text-xl font-semibold">Painel de sinistros</h1>
-      <p className="text-foreground/60 mt-1 text-sm">
-        Visão do analista — dados, status e fila de revisão.
-      </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-foreground text-xl font-semibold">
+            Painel de sinistros
+          </h1>
+          <p className="text-foreground/60 mt-1 text-sm">
+            Visão do analista — documentos processados pelo pipeline.
+          </p>
+        </div>
+        <button
+          onClick={carregar}
+          className="text-foreground/60 hover:text-foreground inline-flex items-center gap-1.5 text-sm"
+        >
+          <ArrowPathIcon className="size-4" /> Atualizar
+        </button>
+      </div>
 
       {/* KPIs */}
       <dl className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -121,9 +150,11 @@ export default function PainelClient() {
       <div className="bg-background inset-ring-foreground/10 mt-4 overflow-hidden rounded-xl shadow-sm inset-ring">
         {sinistros === null ? (
           <p className="text-foreground/50 p-6 text-sm">Carregando…</p>
+        ) : erro ? (
+          <p className="p-6 text-sm text-red-600">{erro}</p>
         ) : visiveis.length === 0 ? (
           <p className="text-foreground/50 p-6 text-sm">
-            Nenhum sinistro neste filtro.
+            Nenhum sinistro encontrado.
           </p>
         ) : (
           <table className="min-w-full divide-y divide-foreground/10 text-sm">
@@ -132,42 +163,46 @@ export default function PainelClient() {
                 <th className="px-4 py-3 font-medium">Protocolo</th>
                 <th className="px-4 py-3 font-medium">Segurado</th>
                 <th className="hidden px-4 py-3 font-medium sm:table-cell">Tipo</th>
-                <th className="hidden px-4 py-3 font-medium md:table-cell">Data</th>
-                <th className="px-4 py-3 text-right font-medium">Valor</th>
+                <th className="hidden px-4 py-3 font-medium md:table-cell">Processado</th>
+                <th className="px-4 py-3 text-right font-medium">Conf.</th>
                 <th className="px-4 py-3 font-medium">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-foreground/5">
-              {visiveis.map((s) => (
-                <tr
-                  key={s.numero_sinistro}
-                  className="hover:bg-foreground/5 transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <Link
-                      href={APP_ROUTES.PRIVATE.SINISTRO(s.numero_sinistro)}
-                      className="font-mono font-medium text-sky-600 hover:text-sky-500"
-                    >
-                      {s.numero_sinistro}
-                    </Link>
-                  </td>
-                  <td className="text-foreground/80 px-4 py-3">
-                    {s.dados_consolidados?.segurado.nome ?? '—'}
-                  </td>
-                  <td className="text-foreground/70 hidden px-4 py-3 sm:table-cell">
-                    {TIPO_SINISTRO[s.tipo_sinistro]}
-                  </td>
-                  <td className="text-foreground/70 hidden px-4 py-3 md:table-cell">
-                    {formatData(s.data_sinistro)}
-                  </td>
-                  <td className="text-foreground/80 px-4 py-3 text-right tabular-nums">
-                    {formatBRL(s.valor_total_orcamentos)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={s.status} />
-                  </td>
-                </tr>
-              ))}
+              {visiveis.map((s) => {
+                const id = idDe(s);
+                const conf = parseConfianca(s.confianca);
+                return (
+                  <tr
+                    key={id}
+                    className="hover:bg-foreground/5 transition-colors"
+                  >
+                    <td className="px-4 py-3">
+                      <Link
+                        href={APP_ROUTES.PRIVATE.SINISTRO(id)}
+                        className="font-mono text-xs font-medium text-sky-600 hover:text-sky-500"
+                      >
+                        {id.slice(0, 8)}…
+                      </Link>
+                    </td>
+                    <td className="text-foreground/80 px-4 py-3">
+                      {s.campos_extraidos?.envolvidos?.[0]?.nome ?? '—'}
+                    </td>
+                    <td className="text-foreground/70 hidden px-4 py-3 sm:table-cell">
+                      {s.tipo_documento ?? '—'}
+                    </td>
+                    <td className="text-foreground/70 hidden px-4 py-3 md:table-cell">
+                      {formatDataHora(s.processado_em)}
+                    </td>
+                    <td className="text-foreground/80 px-4 py-3 text-right tabular-nums">
+                      {conf != null ? `${(conf * 100).toFixed(0)}%` : '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <PipelineBadge status={s.status_pipeline} />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

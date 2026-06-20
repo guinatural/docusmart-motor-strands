@@ -1,15 +1,14 @@
-import { STATUS_SINISTRO, TONE_CLASSES } from '@/lib/docusmart/constants';
-import type { StatusSinistro } from '@/lib/docusmart/types';
+import { statusPipelineMeta, TONE_CLASSES } from '@/lib/docusmart/constants';
 import { cn } from '@/lib/utils';
 
-export default function StatusBadge({
+export default function PipelineBadge({
   status,
   className,
 }: {
-  status: StatusSinistro;
+  status?: string;
   className?: string;
 }) {
-  const meta = STATUS_SINISTRO[status];
+  const meta = statusPipelineMeta(status);
   return (
     <span
       className={cn(

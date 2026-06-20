@@ -59,11 +59,42 @@ export const ETAPA_OPERACAO: Record<EtapaOperacao, string> = {
   decisao: 'Decisão',
 };
 
+export type Tone = 'neutral' | 'info' | 'warning' | 'success' | 'danger';
+
 // Classes Tailwind por "tone" de badge.
-export const TONE_CLASSES: Record<string, string> = {
+export const TONE_CLASSES: Record<Tone, string> = {
   neutral: 'bg-foreground/10 text-foreground/70',
   info: 'bg-blue-500/15 text-blue-700 dark:text-blue-300',
   warning: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
   success: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
   danger: 'bg-red-500/15 text-red-700 dark:text-red-300',
 };
+
+/** Status do pipeline (backend real). Tolerante a valores novos. */
+export function statusPipelineMeta(status?: string): {
+  label: string;
+  tone: Tone;
+} {
+  switch ((status ?? '').toUpperCase()) {
+    case 'AGUARDANDO_PROCESSAMENTO':
+      return { label: 'Aguardando processamento', tone: 'info' };
+    case 'PROCESSANDO':
+    case 'EM_PROCESSAMENTO':
+      return { label: 'Processando', tone: 'info' };
+    case 'SUCESSO':
+    case 'CONCLUIDO':
+    case 'PROCESSADO':
+      return { label: 'Processado', tone: 'success' };
+    case 'ERRO':
+    case 'FALHA':
+      return { label: 'Falha no processamento', tone: 'danger' };
+    default:
+      return { label: status || '—', tone: 'neutral' };
+  }
+}
+
+/** Status terminais — quando o polling pode parar. */
+export function statusPipelineTerminal(status?: string): boolean {
+  const s = (status ?? '').toUpperCase();
+  return ['SUCESSO', 'CONCLUIDO', 'PROCESSADO', 'ERRO', 'FALHA'].includes(s);
+}
