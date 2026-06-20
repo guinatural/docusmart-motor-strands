@@ -12,6 +12,7 @@ import React from 'react';
 import Button from '@/components/ui/button';
 import InputWithLabel from '@/components/ui/input';
 import { APP_ROUTES } from '@/constants/app-routes';
+import CopyButton from '@/components/docusmart/copy-button';
 import DatePicker from '@/components/docusmart/date-picker';
 import StatusBadge from '@/components/docusmart/status-badge';
 import { TIPO_SINISTRO } from '@/lib/docusmart/constants';
@@ -32,20 +33,36 @@ export default function UploadForm() {
   const [contato, setContato] = React.useState('');
   const [terceiros, setTerceiros] = React.useState(false);
   const [arquivos, setArquivos] = React.useState<File[]>([]);
+  const [arrastando, setArrastando] = React.useState(false);
   const [enviando, setEnviando] = React.useState(false);
   const [resultado, setResultado] = React.useState<IntakeResposta | null>(null);
 
-  function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    const novos = Array.from(e.target.files ?? []);
+  function adicionar(novos: File[]) {
     setArquivos((prev) => {
       const nomes = new Set(prev.map((f) => f.name));
       return [...prev, ...novos.filter((f) => !nomes.has(f.name))];
     });
+  }
+
+  function onPickFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    adicionar(Array.from(e.target.files ?? []));
     e.target.value = '';
+  }
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setArrastando(false);
+    adicionar(Array.from(e.dataTransfer.files ?? []));
   }
 
   function removerArquivo(nome: string) {
     setArquivos((prev) => prev.filter((a) => a.name !== nome));
+  }
+
+  function formatTamanho(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -98,9 +115,12 @@ export default function UploadForm() {
             <p className="text-foreground/50 text-xs tracking-wide uppercase">
               Protocolo do sinistro
             </p>
-            <p className="text-foreground mt-1 font-mono text-lg font-semibold break-all">
-              {resultado.sinistro_id}
-            </p>
+            <div className="mt-1 flex items-center justify-center gap-1">
+              <p className="text-foreground font-mono text-lg font-semibold break-all">
+                {resultado.sinistro_id}
+              </p>
+              <CopyButton value={resultado.sinistro_id} label="" />
+            </div>
             <div className="mt-3">
               <StatusBadge status={resultado.status} />
             </div>
@@ -215,11 +235,24 @@ export default function UploadForm() {
         </span>
         <label
           htmlFor="arquivos"
-          className="border-foreground/20 hover:border-sky-500 mt-2 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-6 py-8 text-center transition-colors"
+          onDragOver={(e) => {
+            e.preventDefault();
+            setArrastando(true);
+          }}
+          onDragLeave={() => setArrastando(false)}
+          onDrop={onDrop}
+          className={cn(
+            'mt-2 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-6 py-8 text-center transition-colors',
+            arrastando
+              ? 'border-sky-500 bg-sky-500/5'
+              : 'border-foreground/20 hover:border-sky-500',
+          )}
         >
           <ArrowUpTrayIcon className="text-foreground/40 size-7" />
           <span className="text-foreground/70 mt-2 text-sm">
-            Clique para anexar (CNH, CRLV, orçamento, BO…)
+            {arrastando
+              ? 'Solte os arquivos aqui'
+              : 'Arraste e solte ou clique para anexar (CNH, CRLV, orçamento, BO…)'}
           </span>
           <span className="text-foreground/40 mt-1 text-xs">
             PDF ou imagem — enviados com segurança para o S3
@@ -244,6 +277,9 @@ export default function UploadForm() {
                 <span className="flex min-w-0 items-center gap-2">
                   <DocumentIcon className="text-foreground/40 size-4 shrink-0" />
                   <span className="truncate">{arquivo.name}</span>
+                  <span className="text-foreground/40 shrink-0 text-xs">
+                    {formatTamanho(arquivo.size)}
+                  </span>
                 </span>
                 <button
                   type="button"

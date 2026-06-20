@@ -8,6 +8,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import React from 'react';
 
 import StatusBadge from '@/components/docusmart/status-badge';
@@ -36,6 +37,7 @@ function valorDe(s: SinistroApi): number | null {
 }
 
 export default function PainelClient() {
+  const router = useRouter();
   const [sinistros, setSinistros] = React.useState<SinistroApi[] | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
   const [filtro, setFiltro] = React.useState<Filtro>('TODOS');
@@ -154,13 +156,42 @@ export default function PainelClient() {
 
       <div className="bg-background inset-ring-foreground/10 mt-4 overflow-hidden rounded-xl shadow-sm inset-ring">
         {sinistros === null ? (
-          <p className="text-foreground/50 p-6 text-sm">Carregando…</p>
+          <div className="space-y-3 p-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <div className="bg-foreground/10 h-4 w-20 animate-pulse rounded" />
+                <div className="bg-foreground/10 h-4 flex-1 animate-pulse rounded" />
+                <div className="bg-foreground/10 h-4 w-16 animate-pulse rounded" />
+                <div className="bg-foreground/10 h-5 w-20 animate-pulse rounded-full" />
+              </div>
+            ))}
+          </div>
         ) : erro ? (
           <p className="p-6 text-sm text-red-600">{erro}</p>
         ) : visiveis.length === 0 ? (
-          <p className="text-foreground/50 p-6 text-sm">
-            Nenhum sinistro encontrado.
-          </p>
+          sinistros.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+              <DocumentTextIcon className="text-foreground/30 size-10" />
+              <div>
+                <p className="text-foreground font-medium">
+                  Nenhum sinistro ainda
+                </p>
+                <p className="text-foreground/50 mt-1 text-sm">
+                  Os sinistros enviados pelos clientes aparecem aqui.
+                </p>
+              </div>
+              <Link
+                href={APP_ROUTES.PUBLIC.HOME}
+                className="rounded-md bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-500"
+              >
+                Abrir página de envio
+              </Link>
+            </div>
+          ) : (
+            <p className="text-foreground/50 p-6 text-sm">
+              Nenhum sinistro neste filtro.
+            </p>
+          )
         ) : (
           <table className="min-w-full divide-y divide-foreground/10 text-sm">
             <thead>
@@ -178,14 +209,15 @@ export default function PainelClient() {
                 const id = idDe(s);
                 const tipo = s.dados_formulario?.tipo_sinistro;
                 return (
-                  <tr key={id} className="hover:bg-foreground/5 transition-colors">
+                  <tr
+                    key={id}
+                    onClick={() => router.push(APP_ROUTES.PRIVATE.SINISTRO(id))}
+                    className="hover:bg-foreground/5 cursor-pointer transition-colors"
+                  >
                     <td className="px-4 py-3">
-                      <Link
-                        href={APP_ROUTES.PRIVATE.SINISTRO(id)}
-                        className="font-mono text-xs font-medium text-sky-600 hover:text-sky-500"
-                      >
+                      <span className="font-mono text-xs font-medium text-sky-600">
                         {id.slice(0, 8)}…
-                      </Link>
+                      </span>
                     </td>
                     <td className="text-foreground/80 px-4 py-3">{seguradoDe(s)}</td>
                     <td className="text-foreground/70 hidden px-4 py-3 sm:table-cell">

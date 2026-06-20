@@ -4,6 +4,7 @@ import { ArrowPathIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { useSearchParams } from 'next/navigation';
 import React from 'react';
 
+import CopyButton from '@/components/docusmart/copy-button';
 import OperacoesTimeline from '@/components/docusmart/operacoes-timeline';
 import StatusBadge from '@/components/docusmart/status-badge';
 import Button from '@/components/ui/button';
@@ -102,9 +103,12 @@ export default function AcompanharClient() {
         <div className="bg-background inset-ring-foreground/10 mt-8 rounded-2xl p-6 shadow-sm inset-ring">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-foreground font-mono text-sm font-semibold break-all">
-                {s.sinistro_id ?? alvoRef.current}
-              </p>
+              <div className="flex items-center gap-1">
+                <p className="text-foreground font-mono text-sm font-semibold break-all">
+                  {s.sinistro_id ?? alvoRef.current}
+                </p>
+                <CopyButton value={s.sinistro_id ?? alvoRef.current} label="" />
+              </div>
               <p className="text-foreground/60 mt-0.5 text-sm">
                 {form.tipo_sinistro
                   ? TIPO_SINISTRO[form.tipo_sinistro as keyof typeof TIPO_SINISTRO] ?? form.tipo_sinistro

@@ -1,10 +1,17 @@
 'use client';
 
+import {
+  Dialog,
+  DialogBackdrop,
+  DialogPanel,
+  DialogTitle,
+} from '@headlessui/react';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/20/solid';
 import { ArrowLeftIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import React from 'react';
 
+import CopyButton from '@/components/docusmart/copy-button';
 import OperacoesTimeline from '@/components/docusmart/operacoes-timeline';
 import StatusBadge from '@/components/docusmart/status-badge';
 import Button from '@/components/ui/button';
@@ -75,6 +82,8 @@ export default function SinistroDetalhe({ id }: { id: string }) {
   const [erro, setErro] = React.useState<string | null>(null);
   const [carregando, setCarregando] = React.useState(true);
   const [acaoEmAndamento, setAcao] = React.useState(false);
+  const [confirmar, setConfirmar] = React.useState<string | null>(null);
+  const [obs, setObs] = React.useState('');
 
   const buscar = React.useCallback(
     async (silencioso = false) => {
@@ -102,11 +111,16 @@ export default function SinistroDetalhe({ id }: { id: string }) {
     return () => clearTimeout(t);
   }, [detalhe, buscar]);
 
-  async function decidir(status: string) {
+  async function confirmarDecisao() {
+    if (!confirmar) return;
     setAcao(true);
     try {
-      await decidirSinistroApi(id, status);
-      notifySuccess(`Sinistro marcado como ${status.replace(/_/g, ' ').toLowerCase()}.`);
+      await decidirSinistroApi(id, confirmar, obs.trim() || undefined);
+      notifySuccess(
+        `Sinistro marcado como ${confirmar.replace(/_/g, ' ').toLowerCase()}.`,
+      );
+      setConfirmar(null);
+      setObs('');
       await buscar(true);
     } catch (e) {
       notifyError(e instanceof Error ? e.message : 'Falha ao atualizar.');
@@ -131,7 +145,14 @@ export default function SinistroDetalhe({ id }: { id: string }) {
       </Link>
 
       {carregando ? (
-        <p className="text-foreground/50 mt-6 text-sm">Carregando…</p>
+        <div className="mt-6 space-y-4">
+          <div className="bg-foreground/10 h-7 w-72 max-w-full animate-pulse rounded" />
+          <div className="bg-foreground/10 h-16 w-full animate-pulse rounded-xl" />
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+            <div className="bg-foreground/10 h-48 animate-pulse rounded-xl lg:col-span-2" />
+            <div className="bg-foreground/10 h-48 animate-pulse rounded-xl" />
+          </div>
+        </div>
       ) : erro ? (
         <p className="mt-6 text-sm text-red-600">{erro}</p>
       ) : !s ? (
@@ -140,9 +161,12 @@ export default function SinistroDetalhe({ id }: { id: string }) {
         <>
           <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="text-foreground font-mono text-lg font-semibold break-all">
-                {s.sinistro_id ?? id}
-              </h1>
+              <div className="flex items-center gap-1">
+                <h1 className="text-foreground font-mono text-lg font-semibold break-all">
+                  {s.sinistro_id ?? id}
+                </h1>
+                <CopyButton value={s.sinistro_id ?? id} label="" />
+              </div>
               <p className="text-foreground/60 mt-1 text-sm">
                 {form.tipo_sinistro
                   ? TIPO_SINISTRO[form.tipo_sinistro as keyof typeof TIPO_SINISTRO] ?? form.tipo_sinistro
@@ -219,16 +243,29 @@ export default function SinistroDetalhe({ id }: { id: string }) {
                             <td className="text-foreground/80 px-5 py-2.5">
                               {d.tipo_documento || '—'}
                             </td>
-                            <td className="px-5 py-2.5 tabular-nums">
-                              <span
-                                className={cn(
-                                  conf != null && conf < 80
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : 'text-foreground/70',
-                                )}
-                              >
-                                {conf != null ? `${conf}%` : '—'}
-                              </span>
+                            <td className="px-5 py-2.5">
+                              {conf != null ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="bg-foreground/10 h-1.5 w-16 overflow-hidden rounded-full">
+                                    <div
+                                      className={cn(
+                                        'h-full rounded-full',
+                                        conf < 80
+                                          ? 'bg-red-500'
+                                          : conf < 90
+                                            ? 'bg-amber-500'
+                                            : 'bg-emerald-500',
+                                      )}
+                                      style={{ width: `${conf}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-foreground/70 text-xs tabular-nums">
+                                    {conf}%
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-foreground/40">—</span>
+                              )}
                             </td>
                             <td className="px-5 py-2.5">
                               <span
@@ -300,7 +337,7 @@ export default function SinistroDetalhe({ id }: { id: string }) {
                   </p>
                   <div className="flex gap-2">
                     <Button
-                      onClick={() => decidir('APROVADO')}
+                      onClick={() => setConfirmar('APROVADO')}
                       disabled={acaoEmAndamento}
                       className="flex-1"
                     >
@@ -308,7 +345,7 @@ export default function SinistroDetalhe({ id }: { id: string }) {
                     </Button>
                     <Button
                       variant="error"
-                      onClick={() => decidir('NEGADO')}
+                      onClick={() => setConfirmar('NEGADO')}
                       disabled={acaoEmAndamento}
                       className="flex-1"
                     >
@@ -325,6 +362,53 @@ export default function SinistroDetalhe({ id }: { id: string }) {
           </div>
         </>
       )}
+
+      {/* Modal de confirmação da decisão */}
+      <Dialog
+        open={confirmar !== null}
+        onClose={() => !acaoEmAndamento && setConfirmar(null)}
+        className="relative z-50"
+      >
+        <DialogBackdrop className="fixed inset-0 bg-gray-900/50" />
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <DialogPanel className="bg-background w-full max-w-md rounded-2xl p-6 shadow-xl">
+            <DialogTitle className="text-foreground text-lg font-semibold">
+              {confirmar === 'APROVADO' ? 'Aprovar sinistro?' : 'Negar sinistro?'}
+            </DialogTitle>
+            <p className="text-foreground/60 mt-1 text-sm">
+              Esta decisão fica registrada na auditoria. Você pode adicionar uma
+              observação (opcional).
+            </p>
+            <textarea
+              value={obs}
+              onChange={(e) => setObs(e.target.value)}
+              rows={3}
+              placeholder="Observação do analista…"
+              className="bg-background text-foreground outline-foreground/20 focus:outline-sky-600 mt-4 w-full rounded-md px-3 py-2 text-sm outline -outline-offset-1 focus:outline-2 focus:-outline-offset-2"
+            />
+            <div className="mt-5 flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => setConfirmar(null)}
+                disabled={acaoEmAndamento}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant={confirmar === 'NEGADO' ? 'error' : 'primary'}
+                onClick={confirmarDecisao}
+                disabled={acaoEmAndamento}
+              >
+                {acaoEmAndamento
+                  ? 'Salvando…'
+                  : confirmar === 'APROVADO'
+                    ? 'Confirmar aprovação'
+                    : 'Confirmar negação'}
+              </Button>
+            </div>
+          </DialogPanel>
+        </div>
+      </Dialog>
     </div>
   );
 }
