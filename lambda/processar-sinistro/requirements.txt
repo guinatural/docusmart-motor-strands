@@ -1,0 +1,4 @@
+# Empacotar junto da função (NÃO vem no runtime do Lambda):
+strands-agents
+
+# boto3/botocore já estão no runtime do Lambda (python3.12).

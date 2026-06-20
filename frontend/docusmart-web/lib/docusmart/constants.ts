@@ -1,29 +1,16 @@
 import type {
-  Cobertura,
   EtapaOperacao,
   StatusDoc,
   StatusSinistro,
   TipoSinistro,
 } from './types';
 
-/**
- * Parâmetros de negócio (no backend real viram variáveis de ambiente — nada hardcoded).
- * Replicados aqui só para a camada de apresentação exibir os gates.
- */
-export const LIMIAR_CONFIANCA = 0.8;
-export const TETO_AUTO_APROVACAO = 5000; // R$
-export const DOCS_OBRIGATORIOS_BASE = [
-  'formulario',
-  'identidade',
-  'crlv',
-  'orcamento',
-];
-// BO (boletim de ocorrência) é obrigatório se: roubo, furto ou terceiros_envolvidos.
+export type Tone = 'neutral' | 'info' | 'warning' | 'success' | 'danger';
 
 // ── Rótulos e cores de status ────────────────────────────────────────────────
 export const STATUS_SINISTRO: Record<
   StatusSinistro,
-  { label: string; tone: 'neutral' | 'info' | 'warning' | 'success' | 'danger' }
+  { label: string; tone: Tone }
 > = {
   ABERTO: { label: 'Aberto', tone: 'neutral' },
   EM_PROCESSAMENTO: { label: 'Em processamento', tone: 'info' },
@@ -45,12 +32,6 @@ export const TIPO_SINISTRO: Record<TipoSinistro, string> = {
   furto: 'Furto',
 };
 
-export const COBERTURA: Record<Cobertura, string> = {
-  compreensiva: 'Compreensiva',
-  colisao: 'Colisão',
-  roubo_furto: 'Roubo e furto',
-};
-
 export const ETAPA_OPERACAO: Record<EtapaOperacao, string> = {
   upload: 'Upload',
   classificacao: 'Classificação',
@@ -58,8 +39,6 @@ export const ETAPA_OPERACAO: Record<EtapaOperacao, string> = {
   validacao: 'Validação',
   decisao: 'Decisão',
 };
-
-export type Tone = 'neutral' | 'info' | 'warning' | 'success' | 'danger';
 
 // Classes Tailwind por "tone" de badge.
 export const TONE_CLASSES: Record<Tone, string> = {
@@ -70,36 +49,7 @@ export const TONE_CLASSES: Record<Tone, string> = {
   danger: 'bg-red-500/15 text-red-700 dark:text-red-300',
 };
 
-/** Status do pipeline (backend real). Tolerante a valores novos. */
-export function statusPipelineMeta(status?: string): {
-  label: string;
-  tone: Tone;
-} {
-  switch ((status ?? '').toUpperCase()) {
-    case 'AGUARDANDO_PROCESSAMENTO':
-      return { label: 'Aguardando processamento', tone: 'info' };
-    case 'PROCESSANDO':
-    case 'EM_PROCESSAMENTO':
-      return { label: 'Processando', tone: 'info' };
-    case 'SUCESSO':
-    case 'CONCLUIDO':
-    case 'PROCESSADO':
-      return { label: 'Processado', tone: 'success' };
-    case 'ERRO':
-    case 'FALHA':
-      return { label: 'Falha no processamento', tone: 'danger' };
-    default:
-      return { label: status || '—', tone: 'neutral' };
-  }
-}
-
-/** Status terminais — quando o polling pode parar. */
-export function statusPipelineTerminal(status?: string): boolean {
-  const s = (status ?? '').toUpperCase();
-  return ['SUCESSO', 'CONCLUIDO', 'PROCESSADO', 'ERRO', 'FALHA'].includes(s);
-}
-
-/** Status de NEGÓCIO do sinistro (vindo do backend). Tolerante a valores novos. */
+/** Status de negócio do sinistro (do backend). Tolerante a valores novos. */
 export function statusSinistroMeta(status?: string): {
   label: string;
   tone: Tone;
@@ -114,7 +64,7 @@ export function statusSinistroMeta(status?: string): {
   return { label: status || '—', tone: 'neutral' };
 }
 
-/** Sinistro ainda em processamento (polling deve continuar). */
+/** Sinistro ainda em processamento (o polling deve continuar). */
 export function sinistroEmProcessamento(status?: string): boolean {
   const s = (status ?? '').toUpperCase();
   return s === '' || s === 'EM_PROCESSAMENTO' || s === 'ABERTO';

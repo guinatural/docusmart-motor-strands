@@ -1,0 +1,2 @@
+# Sem dependências externas a empacotar.
+# boto3/botocore já vêm no runtime do Lambda (python3.12).

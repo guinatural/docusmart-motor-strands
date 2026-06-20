@@ -186,7 +186,8 @@ def lambda_handler(event, context):
 
     # ── Gate: confiança ──────────────────────────────────────────────────────
     baixa_confianca = any(
-        (_conf(d.get("confianca")) or 1) < LIMIAR_CONFIANCA for d in docs
+        (c := _conf(d.get("confianca"))) is not None and c < LIMIAR_CONFIANCA
+        for d in docs
     )
 
     # ── Decisão ──────────────────────────────────────────────────────────────
