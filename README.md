@@ -104,6 +104,9 @@ Serviços AWS (onde/porquê de cada um) em [`docs/SERVICOS-AWS.md`](docs/SERVICO
 Roteiro de testes em [`docs/roteiro-testes.md`](docs/roteiro-testes.md).
 
 ---
+## Benefícios Futuros
+- Utilização do Amazon Cognito para logins seguros
+
 
 ## IA Responsável / LGPD
 
