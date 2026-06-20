@@ -98,3 +98,24 @@ export function statusPipelineTerminal(status?: string): boolean {
   const s = (status ?? '').toUpperCase();
   return ['SUCESSO', 'CONCLUIDO', 'PROCESSADO', 'ERRO', 'FALHA'].includes(s);
 }
+
+/** Status de NEGÓCIO do sinistro (vindo do backend). Tolerante a valores novos. */
+export function statusSinistroMeta(status?: string): {
+  label: string;
+  tone: Tone;
+} {
+  const s = (status ?? '').toUpperCase();
+  if (s in STATUS_SINISTRO) {
+    return STATUS_SINISTRO[s as StatusSinistro];
+  }
+  if (s === 'ERRO' || s === 'FALHA') {
+    return { label: 'Falha no processamento', tone: 'danger' };
+  }
+  return { label: status || '—', tone: 'neutral' };
+}
+
+/** Sinistro ainda em processamento (polling deve continuar). */
+export function sinistroEmProcessamento(status?: string): boolean {
+  const s = (status ?? '').toUpperCase();
+  return s === '' || s === 'EM_PROCESSAMENTO' || s === 'ABERTO';
+}

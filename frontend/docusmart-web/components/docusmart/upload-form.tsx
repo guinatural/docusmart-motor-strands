@@ -13,7 +13,7 @@ import Button from '@/components/ui/button';
 import InputWithLabel from '@/components/ui/input';
 import { APP_ROUTES } from '@/constants/app-routes';
 import DatePicker from '@/components/docusmart/date-picker';
-import PipelineBadge from '@/components/docusmart/pipeline-badge';
+import StatusBadge from '@/components/docusmart/status-badge';
 import { TIPO_SINISTRO } from '@/lib/docusmart/constants';
 import {
   criarSinistroApi,
@@ -102,7 +102,7 @@ export default function UploadForm() {
               {resultado.sinistro_id}
             </p>
             <div className="mt-3">
-              <PipelineBadge status={resultado.status} />
+              <StatusBadge status={resultado.status} />
             </div>
           </div>
 
@@ -141,7 +141,7 @@ export default function UploadForm() {
       <InputWithLabel
         id="numero_apolice"
         label="Número da apólice"
-        placeholder="AP-2024-5567"
+        placeholder="AP-2026-MFL-00123"
         value={numeroApolice}
         onChange={(e) => setNumeroApolice(e.target.value)}
         required

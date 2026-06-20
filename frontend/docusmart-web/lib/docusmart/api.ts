@@ -109,8 +109,7 @@ export async function criarSinistroApi(
   return data;
 }
 
-// ── Consulta de documento (GET /sinistro/{id}) ───────────────────────────────
-// id = UUID do sinistro/documento (não o protocolo SIN-xxxx).
+// ── Modelo de dados (GET /sinistro/{id} e GET /sinistros) ────────────────────
 export interface Envolvido {
   nome?: string;
   cpf?: string;
@@ -131,17 +130,17 @@ export interface LabelDetectado {
   confianca?: number | string;
 }
 
+/** Um documento processado do pacote (item DOCUMENTO). */
 export interface DocumentoApi {
   id?: string;
   sinistro_id?: string;
+  documento_id?: string;
   tipo_documento?: string;
   confianca?: number | string;
-  status_pipeline?: string;
+  status_doc?: string;
   resumo?: string;
   processado_em?: string;
-  data_processamento_pipeline?: string;
   s3_origem?: { bucket?: string; key?: string };
-  dados_formulario?: DadosFormularioApi;
   labels_detectados?: LabelDetectado[];
   campos_extraidos?: {
     marca_modelo?: string;
@@ -152,16 +151,68 @@ export interface DocumentoApi {
     cor?: string;
     local?: string;
     valor_prejuizo?: string;
-    // pode vir como objeto {nome,cpf,funcao} ou string ("1 veículo")
     envolvidos?: (Envolvido | string)[];
     [campo: string]: unknown;
   };
   [campo: string]: unknown;
 }
 
+export interface Validacoes {
+  documentos_completos?: boolean;
+  documentos_faltantes?: string[];
+  consistencia_cpf?: boolean;
+  consistencia_placa?: boolean;
+  data_dentro_vigencia?: boolean;
+  dentro_do_teto?: boolean;
+}
+
+export interface Decisao {
+  status?: string;
+  motivo?: string;
+  automatica?: boolean;
+}
+
+export interface DadosConsolidados {
+  numero_apolice?: string;
+  segurado?: { nome?: string; cpf?: string };
+  veiculo?: { placa?: string; marca_modelo?: string; ano?: number | string };
+  evento?: {
+    tipo_sinistro?: string;
+    data_sinistro?: string;
+    local?: string;
+    terceiros_envolvidos?: boolean;
+  };
+  documentos?: { documento_id?: string; tipo?: string; score?: number }[];
+  orcamentos?: { oficina?: string; valor_total?: number }[];
+  valor_referencia?: number;
+  validacoes?: Validacoes;
+  decisao?: Decisao;
+  timestamps?: { recebido_em?: string; processado_em?: string };
+}
+
+/** O registro central (item SINISTRO). */
+export interface SinistroApi {
+  id?: string;
+  sinistro_id?: string;
+  numero_apolice?: string;
+  status?: string;
+  dados_formulario?: DadosFormularioApi;
+  dados_consolidados?: DadosConsolidados | null;
+  total_documentos?: number;
+  valor_total_orcamentos?: number | null;
+  documentos_faltantes?: string[];
+  revisao_pendente?: boolean;
+  observacao_analista?: string;
+  revisado_em?: string;
+  created_at?: string;
+  updated_at?: string;
+  [campo: string]: unknown;
+}
+
 export interface OperacaoApi {
   id?: string;
   sinistro_id?: string;
+  documento_id?: string;
   etapa?: string;
   status?: string;
   detalhe?: string;
@@ -171,26 +222,14 @@ export interface OperacaoApi {
   [campo: string]: unknown;
 }
 
-export interface DocumentoResposta {
-  documento: DocumentoApi;
+export interface SinistroDetalhe {
+  sinistro: SinistroApi;
+  documentos: DocumentoApi[];
   historico_operacoes: OperacaoApi[];
 }
 
-/**
- * Status efetivo: o backend às vezes deixa status_pipeline null/"" em registros
- * que JÁ foram processados (têm tipo/confiança/processado_em). Inferimos SUCESSO
- * nesses casos para não exibir "—".
- */
-export function statusEfetivo(d: DocumentoApi): string | undefined {
-  if (d.status_pipeline) return d.status_pipeline;
-  const processado =
-    d.processado_em ||
-    d.tipo_documento ||
-    (d.confianca != null && d.confianca !== '');
-  return processado ? 'SUCESSO' : d.status_pipeline;
-}
-
-export async function obterDocumento(id: string): Promise<DocumentoResposta> {
+/** GET /sinistro/{id} → sinistro + documentos[] + auditoria. */
+export async function obterSinistro(id: string): Promise<SinistroDetalhe> {
   const res = await fetch(`${API_BASE}/sinistro/${encodeURIComponent(id)}`);
   if (res.status === 404) {
     throw new Error('Sinistro não encontrado.');
@@ -200,13 +239,14 @@ export async function obterDocumento(id: string): Promise<DocumentoResposta> {
   }
   const data = await res.json();
   return {
-    documento: data?.documento ?? {},
+    sinistro: data?.sinistro ?? {},
+    documentos: data?.documentos ?? [],
     historico_operacoes: data?.historico_operacoes ?? [],
   };
 }
 
-/** Lista de sinistros para o painel do analista (GET /sinistros). */
-export async function listarSinistrosApi(): Promise<DocumentoApi[]> {
+/** GET /sinistros → lista (1 por sinistro) para o painel. */
+export async function listarSinistrosApi(): Promise<SinistroApi[]> {
   const res = await fetch(`${API_BASE}/sinistros`);
   if (!res.ok) {
     throw new Error(`Falha ao carregar a lista (HTTP ${res.status}).`);
@@ -214,6 +254,22 @@ export async function listarSinistrosApi(): Promise<DocumentoApi[]> {
   const data = await res.json();
   if (Array.isArray(data)) return data;
   return data?.sinistros ?? [];
+}
+
+/** PUT /sinistro/{id} → decisão manual do analista (verificação manual). */
+export async function decidirSinistroApi(
+  id: string,
+  status: string,
+  observacao?: string,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/sinistro/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status, observacao }),
+  });
+  if (!res.ok) {
+    throw new Error(`Falha ao atualizar o sinistro (HTTP ${res.status}).`);
+  }
 }
 
 /**

@@ -3,32 +3,40 @@
 import {
   ArrowPathIcon,
   CheckCircleIcon,
+  ClockIcon,
   DocumentTextIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import React from 'react';
 
-import PipelineBadge from '@/components/docusmart/pipeline-badge';
+import StatusBadge from '@/components/docusmart/status-badge';
 import { APP_ROUTES } from '@/constants/app-routes';
-import { statusPipelineMeta } from '@/lib/docusmart/constants';
-import { formatDataHora } from '@/lib/docusmart/format';
-import {
-  confiancaPct,
-  listarSinistrosApi,
-  statusEfetivo,
-  type DocumentoApi,
-} from '@/lib/docusmart/api';
+import { TIPO_SINISTRO } from '@/lib/docusmart/constants';
+import { formatBRL, formatData } from '@/lib/docusmart/format';
+import { listarSinistrosApi, type SinistroApi } from '@/lib/docusmart/api';
 import { cn } from '@/lib/utils';
 
-type Filtro = 'TODOS' | 'success' | 'andamento' | 'danger';
+const REQUER_ATENCAO = ['EM_ANALISE', 'PENDENTE_DOCUMENTACAO', 'EM_PROCESSAMENTO'];
 
-function idDe(s: DocumentoApi): string {
+type Filtro = 'TODOS' | 'ATENCAO' | 'APROVADO' | 'EM_ANALISE' | 'PENDENTE_DOCUMENTACAO';
+
+function idDe(s: SinistroApi): string {
   return (s.sinistro_id ?? s.id ?? '') as string;
+}
+function seguradoDe(s: SinistroApi): string {
+  return s.dados_consolidados?.segurado?.nome ?? s.numero_apolice ?? '—';
+}
+function valorDe(s: SinistroApi): number | null {
+  return (
+    s.valor_total_orcamentos ??
+    s.dados_consolidados?.valor_referencia ??
+    null
+  );
 }
 
 export default function PainelClient() {
-  const [sinistros, setSinistros] = React.useState<DocumentoApi[] | null>(null);
+  const [sinistros, setSinistros] = React.useState<SinistroApi[] | null>(null);
   const [erro, setErro] = React.useState<string | null>(null);
   const [filtro, setFiltro] = React.useState<Filtro>('TODOS');
 
@@ -48,40 +56,39 @@ export default function PainelClient() {
 
   const kpis = React.useMemo(() => {
     const lista = sinistros ?? [];
-    const tone = (s: DocumentoApi) => statusPipelineMeta(statusEfetivo(s)).tone;
     return {
       total: lista.length,
-      processados: lista.filter((s) => tone(s) === 'success').length,
-      andamento: lista.filter((s) => ['info', 'warning'].includes(tone(s)))
-        .length,
-      falhas: lista.filter((s) => tone(s) === 'danger').length,
+      atencao: lista.filter(
+        (s) => REQUER_ATENCAO.includes(s.status ?? '') || s.revisao_pendente,
+      ).length,
+      aprovados: lista.filter((s) => s.status === 'APROVADO').length,
+      valor: lista.reduce((acc, s) => acc + (valorDe(s) ?? 0), 0),
     };
   }, [sinistros]);
 
   const visiveis = React.useMemo(() => {
     const lista = sinistros ?? [];
     if (filtro === 'TODOS') return lista;
-    if (filtro === 'andamento')
-      return lista.filter((s) =>
-        ['info', 'warning'].includes(statusPipelineMeta(statusEfetivo(s)).tone),
+    if (filtro === 'ATENCAO')
+      return lista.filter(
+        (s) => REQUER_ATENCAO.includes(s.status ?? '') || s.revisao_pendente,
       );
-    return lista.filter(
-      (s) => statusPipelineMeta(statusEfetivo(s)).tone === filtro,
-    );
+    return lista.filter((s) => s.status === filtro);
   }, [sinistros, filtro]);
 
   const cards = [
     { label: 'Sinistros', valor: kpis.total, icon: DocumentTextIcon, tone: 'text-sky-500' },
-    { label: 'Em andamento', valor: kpis.andamento, icon: ArrowPathIcon, tone: 'text-blue-500' },
-    { label: 'Processados', valor: kpis.processados, icon: CheckCircleIcon, tone: 'text-emerald-500' },
-    { label: 'Falhas', valor: kpis.falhas, icon: ExclamationTriangleIcon, tone: 'text-red-500' },
+    { label: 'Fila de revisão', valor: kpis.atencao, icon: ExclamationTriangleIcon, tone: 'text-amber-500' },
+    { label: 'Aprovados', valor: kpis.aprovados, icon: CheckCircleIcon, tone: 'text-emerald-500' },
+    { label: 'Total em orçamentos', valor: formatBRL(kpis.valor), icon: ClockIcon, tone: 'text-blue-500' },
   ];
 
   const filtros: { key: Filtro; label: string }[] = [
     { key: 'TODOS', label: 'Todos' },
-    { key: 'andamento', label: 'Em andamento' },
-    { key: 'success', label: 'Processados' },
-    { key: 'danger', label: 'Falhas' },
+    { key: 'ATENCAO', label: 'Fila de revisão' },
+    { key: 'APROVADO', label: 'Aprovados' },
+    { key: 'EM_ANALISE', label: 'Em análise' },
+    { key: 'PENDENTE_DOCUMENTACAO', label: 'Pendente de documentação' },
   ];
 
   return (
@@ -92,7 +99,7 @@ export default function PainelClient() {
             Painel de sinistros
           </h1>
           <p className="text-foreground/60 mt-1 text-sm">
-            Visão do analista — documentos processados pelo pipeline.
+            Visão do analista — dados, status e fila de revisão.
           </p>
         </div>
         <button
@@ -103,7 +110,6 @@ export default function PainelClient() {
         </button>
       </div>
 
-      {/* KPIs */}
       <dl className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {cards.map((c) => (
           <div
@@ -121,7 +127,6 @@ export default function PainelClient() {
         ))}
       </dl>
 
-      {/* filtros */}
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <span className="text-foreground/50 mr-1 text-sm font-medium">
           Filtrar:
@@ -147,7 +152,6 @@ export default function PainelClient() {
         )}
       </div>
 
-      {/* tabela */}
       <div className="bg-background inset-ring-foreground/10 mt-4 overflow-hidden rounded-xl shadow-sm inset-ring">
         {sinistros === null ? (
           <p className="text-foreground/50 p-6 text-sm">Carregando…</p>
@@ -164,20 +168,17 @@ export default function PainelClient() {
                 <th className="px-4 py-3 font-medium">Protocolo</th>
                 <th className="px-4 py-3 font-medium">Segurado</th>
                 <th className="hidden px-4 py-3 font-medium sm:table-cell">Tipo</th>
-                <th className="hidden px-4 py-3 font-medium md:table-cell">Processado</th>
-                <th className="px-4 py-3 text-right font-medium">Conf.</th>
+                <th className="hidden px-4 py-3 font-medium md:table-cell">Data</th>
+                <th className="px-4 py-3 text-right font-medium">Valor</th>
                 <th className="px-4 py-3 font-medium">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-foreground/5">
               {visiveis.map((s) => {
                 const id = idDe(s);
-                const conf = confiancaPct(s.confianca);
+                const tipo = s.dados_formulario?.tipo_sinistro;
                 return (
-                  <tr
-                    key={id}
-                    className="hover:bg-foreground/5 transition-colors"
-                  >
+                  <tr key={id} className="hover:bg-foreground/5 transition-colors">
                     <td className="px-4 py-3">
                       <Link
                         href={APP_ROUTES.PRIVATE.SINISTRO(id)}
@@ -186,25 +187,18 @@ export default function PainelClient() {
                         {id.slice(0, 8)}…
                       </Link>
                     </td>
-                    <td className="text-foreground/80 px-4 py-3">
-                      {(() => {
-                        const e0 = s.campos_extraidos?.envolvidos?.[0];
-                        const nome =
-                          typeof e0 === 'string' ? e0 : e0?.nome;
-                        return nome ?? s.dados_formulario?.numero_apolice ?? '—';
-                      })()}
-                    </td>
+                    <td className="text-foreground/80 px-4 py-3">{seguradoDe(s)}</td>
                     <td className="text-foreground/70 hidden px-4 py-3 sm:table-cell">
-                      {s.tipo_documento ?? '—'}
+                      {tipo ? TIPO_SINISTRO[tipo as keyof typeof TIPO_SINISTRO] ?? tipo : '—'}
                     </td>
                     <td className="text-foreground/70 hidden px-4 py-3 md:table-cell">
-                      {formatDataHora(s.processado_em)}
+                      {formatData(s.dados_formulario?.data_sinistro)}
                     </td>
                     <td className="text-foreground/80 px-4 py-3 text-right tabular-nums">
-                      {conf != null ? `${conf}%` : '—'}
+                      {formatBRL(valorDe(s))}
                     </td>
                     <td className="px-4 py-3">
-                      <PipelineBadge status={statusEfetivo(s)} />
+                      <StatusBadge status={s.status} />
                     </td>
                   </tr>
                 );
