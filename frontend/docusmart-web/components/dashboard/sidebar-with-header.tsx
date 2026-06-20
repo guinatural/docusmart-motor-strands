@@ -2,18 +2,20 @@
 
 import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react';
 import {
+  ArrowRightStartOnRectangleIcon,
+  Bars3Icon,
   ChatBubbleLeftRightIcon,
   Squares2X2Icon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { Bars3Icon } from '@heroicons/react/24/outline';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import React from 'react';
 
 import Logo from '@/components/docusmart/logo';
 import { APP_ROUTES } from '@/constants/app-routes';
+import { sair, usuarioAtual } from '@/lib/docusmart/auth';
 import { cn } from '@/lib/utils';
 
 const navigation = [
@@ -54,13 +56,23 @@ function NavLinks({ pathname }: { pathname: string }) {
 
 export default function SidebarWithHeader({
   children,
-  user,
 }: {
   children: React.ReactNode;
-  user: { nome: string; papel: string };
 }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [nome, setNome] = React.useState('Analista');
   const pathname = usePathname();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    const u = usuarioAtual();
+    if (u) setNome(u);
+  }, []);
+
+  function logout() {
+    sair();
+    router.replace(APP_ROUTES.PUBLIC.LOGIN);
+  }
 
   return (
     <React.Fragment>
@@ -136,12 +148,22 @@ export default function SidebarWithHeader({
             <div className="flex items-center gap-2">
               <UserCircleIcon className="text-foreground/40 size-8" />
               <div className="hidden sm:block">
-                <p className="text-foreground text-sm font-semibold">
-                  {user.nome}
+                <p className="text-foreground text-sm font-semibold">{nome}</p>
+                <p className="text-foreground/50 text-xs">
+                  Analista de sinistros
                 </p>
-                <p className="text-foreground/50 text-xs">{user.papel}</p>
               </div>
             </div>
+            <div className="bg-foreground/10 h-6 w-px" />
+            <button
+              type="button"
+              onClick={logout}
+              title="Sair"
+              className="text-foreground/60 hover:text-foreground inline-flex items-center gap-1.5 text-sm font-medium"
+            >
+              <ArrowRightStartOnRectangleIcon className="size-5" />
+              <span className="hidden sm:inline">Sair</span>
+            </button>
           </div>
         </div>
 

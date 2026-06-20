@@ -2,6 +2,7 @@ export const APP_ROUTES = {
   PUBLIC: {
     HOME: '/',
     ACOMPANHAR: '/acompanhar',
+    LOGIN: '/login',
   },
   PRIVATE: {
     PAINEL: '/painel',
