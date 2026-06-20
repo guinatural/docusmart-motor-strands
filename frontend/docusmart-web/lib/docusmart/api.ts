@@ -100,7 +100,13 @@ export async function criarSinistroApi(
   if (!res.ok) {
     throw new Error(`Falha ao registrar o sinistro (HTTP ${res.status}).`);
   }
-  return res.json();
+  const data = await res.json();
+  // O intake retorna objeto único {sinistro_id,status} para 1 arquivo,
+  // ou {sinistros:[...]} para vários. Normalizamos para o primeiro protocolo.
+  if (Array.isArray(data?.sinistros) && data.sinistros.length > 0) {
+    return data.sinistros[0];
+  }
+  return data;
 }
 
 // ── Consulta de documento (GET /sinistro/{id}) ───────────────────────────────
@@ -168,6 +174,20 @@ export interface OperacaoApi {
 export interface DocumentoResposta {
   documento: DocumentoApi;
   historico_operacoes: OperacaoApi[];
+}
+
+/**
+ * Status efetivo: o backend às vezes deixa status_pipeline null/"" em registros
+ * que JÁ foram processados (têm tipo/confiança/processado_em). Inferimos SUCESSO
+ * nesses casos para não exibir "—".
+ */
+export function statusEfetivo(d: DocumentoApi): string | undefined {
+  if (d.status_pipeline) return d.status_pipeline;
+  const processado =
+    d.processado_em ||
+    d.tipo_documento ||
+    (d.confianca != null && d.confianca !== '');
+  return processado ? 'SUCESSO' : d.status_pipeline;
 }
 
 export async function obterDocumento(id: string): Promise<DocumentoResposta> {

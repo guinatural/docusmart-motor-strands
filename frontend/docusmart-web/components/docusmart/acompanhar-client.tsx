@@ -13,6 +13,7 @@ import { formatDataHora } from '@/lib/docusmart/format';
 import {
   confiancaPct,
   obterDocumento,
+  statusEfetivo,
   type DocumentoResposta,
 } from '@/lib/docusmart/api';
 
@@ -59,14 +60,14 @@ export default function AcompanharClient() {
   // polling enquanto o pipeline não terminou
   React.useEffect(() => {
     if (!detalhe) return;
-    if (statusPipelineTerminal(detalhe.documento.status_pipeline)) return;
+    if (statusPipelineTerminal(statusEfetivo(detalhe.documento))) return;
     const t = setTimeout(() => buscar(alvoRef.current, true), POLL_MS);
     return () => clearTimeout(t);
   }, [detalhe, buscar]);
 
   const doc = detalhe?.documento;
   const processando =
-    doc != null && !statusPipelineTerminal(doc.status_pipeline);
+    doc != null && !statusPipelineTerminal(statusEfetivo(doc));
   const confianca = confiancaPct(doc?.confianca);
   const env0 = doc?.campos_extraidos?.envolvidos?.[0];
   const segurado = typeof env0 === 'string' ? env0 : env0?.nome;
@@ -122,7 +123,7 @@ export default function AcompanharClient() {
                 </p>
               )}
             </div>
-            <PipelineBadge status={doc.status_pipeline} />
+            <PipelineBadge status={statusEfetivo(doc)} />
           </div>
 
           {processando && (

@@ -16,6 +16,7 @@ import { formatDataHora } from '@/lib/docusmart/format';
 import {
   confiancaPct,
   listarSinistrosApi,
+  statusEfetivo,
   type DocumentoApi,
 } from '@/lib/docusmart/api';
 import { cn } from '@/lib/utils';
@@ -47,7 +48,7 @@ export default function PainelClient() {
 
   const kpis = React.useMemo(() => {
     const lista = sinistros ?? [];
-    const tone = (s: DocumentoApi) => statusPipelineMeta(s.status_pipeline).tone;
+    const tone = (s: DocumentoApi) => statusPipelineMeta(statusEfetivo(s)).tone;
     return {
       total: lista.length,
       processados: lista.filter((s) => tone(s) === 'success').length,
@@ -62,10 +63,10 @@ export default function PainelClient() {
     if (filtro === 'TODOS') return lista;
     if (filtro === 'andamento')
       return lista.filter((s) =>
-        ['info', 'warning'].includes(statusPipelineMeta(s.status_pipeline).tone),
+        ['info', 'warning'].includes(statusPipelineMeta(statusEfetivo(s)).tone),
       );
     return lista.filter(
-      (s) => statusPipelineMeta(s.status_pipeline).tone === filtro,
+      (s) => statusPipelineMeta(statusEfetivo(s)).tone === filtro,
     );
   }, [sinistros, filtro]);
 
@@ -203,7 +204,7 @@ export default function PainelClient() {
                       {conf != null ? `${conf}%` : '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <PipelineBadge status={s.status_pipeline} />
+                      <PipelineBadge status={statusEfetivo(s)} />
                     </td>
                   </tr>
                 );

@@ -12,6 +12,7 @@ import { formatData, formatDataHora } from '@/lib/docusmart/format';
 import {
   confiancaPct,
   obterDocumento,
+  statusEfetivo,
   type DocumentoResposta,
 } from '@/lib/docusmart/api';
 
@@ -81,7 +82,7 @@ export default function SinistroDetalhe({ id }: { id: string }) {
 
   React.useEffect(() => {
     if (!detalhe) return;
-    if (statusPipelineTerminal(detalhe.documento.status_pipeline)) return;
+    if (statusPipelineTerminal(statusEfetivo(detalhe.documento))) return;
     const t = setTimeout(() => buscar(true), POLL_MS);
     return () => clearTimeout(t);
   }, [detalhe, buscar]);
@@ -94,7 +95,7 @@ export default function SinistroDetalhe({ id }: { id: string }) {
   );
   const confianca = confiancaPct(doc?.confianca);
   const processando =
-    doc != null && !statusPipelineTerminal(doc.status_pipeline);
+    doc != null && !statusPipelineTerminal(statusEfetivo(doc));
 
   return (
     <div>
@@ -125,7 +126,7 @@ export default function SinistroDetalhe({ id }: { id: string }) {
                 {confianca != null && ` · ${confianca}% confiança`}
               </p>
             </div>
-            <PipelineBadge status={doc.status_pipeline} className="mt-1" />
+            <PipelineBadge status={statusEfetivo(doc)} className="mt-1" />
           </div>
 
           {processando && (
