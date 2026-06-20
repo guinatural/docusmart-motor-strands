@@ -99,6 +99,8 @@ caso contrário → **Aprovado** (automático).
 - [ ] **Caixa de decisão** (verde = automática / âmbar = requer analista) com o motivo.
 - [ ] **Segurado, veículo e evento** preenchidos (apólice + formulário).
 - [ ] **Documentos**: uma linha por arquivo (DOC-01…), tipo, **% de confiança**, status.
+- [ ] **"Ver" (Original)**: abre o documento enviado pelo cliente numa aba nova (URL
+      presigned, expira em 5 min) — útil na confiança baixa (cenário H) p/ o analista conferir.
 - [ ] **Validações (gates)**: ✓/✗ para docs, CPF, placa, vigência, teto, confiança.
 - [ ] **Orçamentos** + valor de referência (quando houver).
 - [ ] **Auditoria**: timeline com início / extração / classificação / decisão.

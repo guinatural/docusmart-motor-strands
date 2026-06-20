@@ -7,7 +7,11 @@ import {
   DialogTitle,
 } from '@headlessui/react';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/20/solid';
-import { ArrowLeftIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import {
+  ArrowLeftIcon,
+  ArrowPathIcon,
+  ArrowTopRightOnSquareIcon,
+} from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import React from 'react';
 
@@ -230,6 +234,7 @@ export default function SinistroDetalhe({ id }: { id: string }) {
                         <th className="px-5 py-2 font-medium">Tipo</th>
                         <th className="px-5 py-2 font-medium">Confiança</th>
                         <th className="px-5 py-2 font-medium">Status</th>
+                        <th className="px-5 py-2 font-medium">Original</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-foreground/5">
@@ -280,6 +285,21 @@ export default function SinistroDetalhe({ id }: { id: string }) {
                                   d.status_doc ??
                                   '—'}
                               </span>
+                            </td>
+                            <td className="px-5 py-2.5">
+                              {d.url_visualizacao ? (
+                                <a
+                                  href={d.url_visualizacao}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sky-600 hover:text-sky-700 inline-flex items-center gap-1 text-xs font-medium dark:text-sky-400"
+                                >
+                                  <ArrowTopRightOnSquareIcon className="size-3.5" />
+                                  Ver
+                                </a>
+                              ) : (
+                                <span className="text-foreground/40">—</span>
+                              )}
                             </td>
                           </tr>
                         );

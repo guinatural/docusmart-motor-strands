@@ -141,6 +141,7 @@ export interface DocumentoApi {
   resumo?: string;
   processado_em?: string;
   s3_origem?: { bucket?: string; key?: string };
+  url_visualizacao?: string;
   labels_detectados?: LabelDetectado[];
   campos_extraidos?: {
     marca_modelo?: string;
