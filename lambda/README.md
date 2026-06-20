@@ -33,7 +33,8 @@ e `indexar-sinistro`, que usam `handler.lambda_handler`.
 - Todas: `DYNAMO_TABLE_NAME=docusmart-idp-grupo-5-documents`, `AWS_REGION_NAME=us-east-1`
 - `intake`: `SFN_ARN`, `BUCKET_NAME`
 - `processar-sinistro` / `agregar-decisao`: `LIMIAR_CONFIANCA=0.80`, `TETO_AUTO_APROVACAO=5000`, `MODEL_ID`
-- `chat`: `MODEL_ID`, `KNOWLEDGE_BASE_ID=GDHBPK6JNK`
+- `agregar-decisao`: `SNS_TOPIC_ARN` (notificações)
+- `chat`: `MODEL_ID`, `KNOWLEDGE_BASE_ID=GDHBPK6JNK`, `GUARDRAIL_ID`, `GUARDRAIL_VERSION=DRAFT`
 - `upload-presigned`: `BUCKET_NAME`
 - `indexar-sinistro`: `VECTOR_BUCKET_NAME`, `VECTOR_INDEX_NAME`
 

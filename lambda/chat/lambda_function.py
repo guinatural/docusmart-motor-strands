@@ -22,6 +22,8 @@ REGION = os.environ.get("AWS_REGION_NAME", "us-east-1")
 TABLE = os.environ.get("DYNAMO_TABLE_NAME", "docusmart-idp-grupo-5-documents")
 MODEL_ID = os.environ.get("MODEL_ID", "us.anthropic.claude-haiku-4-5-20251001-v1:0")
 KB_ID = os.environ.get("KNOWLEDGE_BASE_ID", "GDHBPK6JNK")
+GUARDRAIL_ID = os.environ.get("GUARDRAIL_ID", "8sz2kyufzbjc")
+GUARDRAIL_VERSION = os.environ.get("GUARDRAIL_VERSION", "DRAFT")
 MAX_HIST = 8
 
 dynamo = boto3.resource("dynamodb", region_name=REGION)
@@ -129,6 +131,10 @@ def lambda_handler(event, context):
             system=system,
             messages=mensagens,
             inferenceConfig={"maxTokens": 700, "temperature": 0.2},
+            guardrailConfig={
+                "guardrailIdentifier": GUARDRAIL_ID,
+                "guardrailVersion": GUARDRAIL_VERSION,
+            },
         )
         texto = resp["output"]["message"]["content"][0]["text"]
 

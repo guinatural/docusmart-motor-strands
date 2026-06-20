@@ -33,8 +33,36 @@ REGION = os.environ.get("AWS_REGION_NAME", "us-east-1")
 TABLE = os.environ["DYNAMO_TABLE_NAME"]
 LIMIAR_CONFIANCA = float(os.environ.get("LIMIAR_CONFIANCA", "0.80"))
 TETO_AUTO_APROVACAO = float(os.environ.get("TETO_AUTO_APROVACAO", "5000"))
+SNS_TOPIC_ARN = os.environ.get(
+    "SNS_TOPIC_ARN",
+    "arn:aws:sns:us-east-1:152160819260:docusmart-idp-grupo-5-notificacoes",
+)
 
 dynamo = boto3.resource("dynamodb", region_name=REGION)
+sns = boto3.client("sns", region_name=REGION)
+
+
+def _notificar(sinistro_id, status, segurado, contato, motivo):
+    """Publica um evento de decisão no SNS (notifica cliente/analista).
+    Tolerante a falha — nunca quebra o pipeline."""
+    try:
+        r = sns.publish(
+            TopicArn=SNS_TOPIC_ARN,
+            Subject=f"DocuSmart — sinistro {status}"[:99],
+            Message=(
+                f"Sinistro: {sinistro_id}\n"
+                f"Segurado: {segurado or '-'}\n"
+                f"Status: {status}\n"
+                f"Contato: {contato or '-'}\n"
+                f"Motivo: {motivo}"
+            ),
+            MessageAttributes={
+                "status": {"DataType": "String", "StringValue": status},
+            },
+        )
+        print(f"[SNS] notificacao publicada: {r.get('MessageId')}")
+    except Exception as e:
+        print(f"[SNS] falha ao notificar: {e}")
 
 
 def _audit(table, sinistro_id, etapa, status, detalhes=""):
@@ -274,5 +302,6 @@ def lambda_handler(event, context):
     )
 
     _audit(table, sinistro_id, "decisao", "ok", f"{status}: {motivo}")
+    _notificar(sinistro_id, status, seg.get("nome"), form.get("contato"), motivo)
 
     return {"sinistro_id": sinistro_id, "status": status, "automatica": automatica}

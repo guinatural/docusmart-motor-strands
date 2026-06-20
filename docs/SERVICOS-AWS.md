@@ -24,6 +24,8 @@ quê. Tudo em **us-east-1**, conta `152160819260` (Grupo 5).
 | **Rekognition**                         | Visão — analisa fotos de veículos/danos                 |
 | **Bedrock (Converse)**                  | LLM (Claude Haiku) — classifica/extrai e responde o SAC |
 | **Bedrock Knowledge Base + S3 Vectors** | RAG — busca semântica nos documentos                    |
+| **Bedrock Guardrails**                  | Filtros de conteúdo/segurança no agente SAC             |
+| **Amazon SNS**                          | Notificações quando o sinistro é decidido               |
 | **Amplify Hosting**                     | Hospeda o frontend (Next.js)                            |
 | **CloudWatch**                          | Logs e observabilidade                                  |
 | **IAM**                                 | Permissões (roles das Lambdas e do Step Functions)      |
@@ -138,6 +140,26 @@ quê. Tudo em **us-east-1**, conta `152160819260` (Grupo 5).
 - **Por quê:** atende o requisito de **GenAI nativo (S3 Vectors)** do case e
   permite responder sobre o texto dos documentos, não só sobre os campos
   estruturados. O `chat` combina os dois (RAG **híbrido**: DynamoDB + S3 Vectors).
+
+### Amazon Bedrock Guardrails
+- **Onde:** guardrail `docusmart-idp-grupo-5-sac` anexado à chamada `converse` da
+  `chat` (`guardrailConfig`).
+- **Finalidade:** filtros de conteúdo (ódio, abuso, violência, *prompt attack*)
+  nas entradas/saídas do agente SAC.
+- **Por quê:** **IA Responsável** — evita uso indevido do agente. Mantemos os
+  dados (CPF/nome) visíveis pois o SAC é interno (analista), sem anonimização.
+
+---
+
+## Notificações
+
+### Amazon SNS
+- **Onde:** tópico `docusmart-idp-grupo-5-notificacoes`; a `agregar-decisao`
+  publica um evento ao concluir a decisão.
+- **Finalidade:** avisar cliente/analista do resultado (aprovado, pendência,
+  fila de revisão).
+- **Por quê:** desacopla a notificação do fluxo; basta inscrever e-mails/SMS no
+  tópico (sem alterar código). *Para receber, é preciso uma assinatura confirmada.*
 
 ---
 
