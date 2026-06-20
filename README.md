@@ -75,7 +75,7 @@ lambda/                   Código das Lambdas (1 pasta por função)
   chat/                     POST /chat — agente SAC (Converse + RAG)
 step-functions/           pipeline.asl.json — definição do Step Functions
 scripts/                  seed_clean.py — limpa a base e popula apólices
-docs/                     ARQUITETURA.md · roteiro-testes.md
+docs/                     ARQUITETURA.md · SERVICOS-AWS.md · CUSTOS.md · roteiro-testes.md
 ```
 
 ---
@@ -101,6 +101,7 @@ Variáveis em `.env.example` (a base da API tem fallback embutido).
 Deploy das Lambdas e detalhes em [`lambda/README.md`](lambda/README.md).
 Arquitetura e regras de negócio em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
 Serviços AWS (onde/porquê de cada um) em [`docs/SERVICOS-AWS.md`](docs/SERVICOS-AWS.md).
+Estimativa de custos (pay-per-use) em [`docs/CUSTOS.md`](docs/CUSTOS.md).
 Roteiro de testes em [`docs/roteiro-testes.md`](docs/roteiro-testes.md).
 
 ---
