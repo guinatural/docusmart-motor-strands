@@ -100,6 +100,7 @@ Variáveis em `.env.example` (a base da API tem fallback embutido).
 
 Deploy das Lambdas e detalhes em [`lambda/README.md`](lambda/README.md).
 Arquitetura e regras de negócio em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
+Serviços AWS (onde/porquê de cada um) em [`docs/SERVICOS-AWS.md`](docs/SERVICOS-AWS.md).
 Roteiro de testes em [`docs/roteiro-testes.md`](docs/roteiro-testes.md).
 
 ---
