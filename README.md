@@ -97,6 +97,7 @@ Variáveis em `.env.example` (a base da API tem fallback embutido).
 - **Tabela DynamoDB:** `docusmart-idp-grupo-5-documents` (single-table)
 - **Bucket S3:** `docusmart-idp-grupo-5-docs`
 - **Step Functions:** `docusmart-idp-grupo-5-pipeline`
+- **CloudWatch Dashboard:** `docusmart-idp-grupo-5` (gerado por `scripts/cloudwatch_dashboard.py`)
 
 Deploy das Lambdas e detalhes em [`lambda/README.md`](lambda/README.md).
 Arquitetura e regras de negócio em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
