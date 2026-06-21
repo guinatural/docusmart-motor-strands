@@ -13,6 +13,7 @@ REGION = "us-east-1"
 DASHBOARD = "docusmart-idp-grupo-5"
 API_NAME = "docusmart-api-grupo5"
 STATE_MACHINE = "docusmart-idp-grupo-5-pipeline"
+TABLE = "docusmart-idp-grupo-5-documents"
 
 LAMBDAS = [
     "docusmart-idp-grupo-5-upload-presigned",
@@ -77,6 +78,28 @@ def build():
         ["AWS/ApiGateway", "Latency", "ApiName", API_NAME, {"stat": "p99"}],
     ]
     widgets.append(widget(0, 21, 24, 6, "API Gateway — Latência (ms)", lat, stat="Average"))
+
+    # Linha 5 — Bedrock (SEARCH descobre o ModelId automaticamente)
+    bedrock_inv = [[{"expression": "SEARCH('{AWS/Bedrock,ModelId} MetricName=\"Invocations\"', 'Sum', 300)", "id": "bi", "region": REGION, "label": "Invocações"}]]
+    widgets.append(widget(0, 27, 12, 7, "Bedrock — Invocações (Haiku)", bedrock_inv))
+    bedrock_tok = [
+        [{"expression": "SEARCH('{AWS/Bedrock,ModelId} MetricName=\"InputTokenCount\"', 'Sum', 300)", "id": "ti", "region": REGION, "label": "Tokens de entrada"}],
+        [{"expression": "SEARCH('{AWS/Bedrock,ModelId} MetricName=\"OutputTokenCount\"', 'Sum', 300)", "id": "to", "region": REGION, "label": "Tokens de saída"}],
+    ]
+    widgets.append(widget(12, 27, 12, 7, "Bedrock — Tokens", bedrock_tok))
+
+    # Linha 6 — DynamoDB
+    ddb_cap = [
+        ["AWS/DynamoDB", "ConsumedReadCapacityUnits", "TableName", TABLE],
+        ["AWS/DynamoDB", "ConsumedWriteCapacityUnits", "TableName", TABLE],
+    ]
+    widgets.append(widget(0, 34, 12, 7, "DynamoDB — Capacidade consumida (RCU/WCU)", ddb_cap))
+    ddb_err = [
+        ["AWS/DynamoDB", "ThrottledRequests", "TableName", TABLE],
+        ["AWS/DynamoDB", "SystemErrors", "TableName", TABLE],
+        ["AWS/DynamoDB", "UserErrors", "TableName", TABLE],
+    ]
+    widgets.append(widget(12, 34, 12, 7, "DynamoDB — Throttles e erros", ddb_err))
     return {"widgets": widgets}
 
 
