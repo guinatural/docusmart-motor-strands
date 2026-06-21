@@ -74,7 +74,7 @@ lambda/                   Código das Lambdas (1 pasta por função)
   delete-sinistro/          DELETE — LGPD (remove dados + arquivos)
   chat/                     POST /chat — agente SAC (Converse + RAG)
 step-functions/           pipeline.asl.json — definição do Step Functions
-scripts/                  seed_clean.py — limpa a base e popula apólices
+scripts/                  seed_clean.py · cloudwatch_dashboard.py
 docs/                     ARQUITETURA.md · SERVICOS-AWS.md · CUSTOS.md · roteiro-testes.md
 ```
 
