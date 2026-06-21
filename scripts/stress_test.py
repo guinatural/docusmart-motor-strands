@@ -143,7 +143,7 @@ def main():
         v = lat[nome]
         ok = sum(c for s, c in status[nome].items() if 200 <= s < 300)
         okpct = 100 * ok / len(v) if v else 0
-        print(f"{nome:<22}{len(v):>6}{okpct:>6.0f}%{pct(v,50):>8.0f}{pct(v,90):>8.0f}"
+        print(f"{nome:<22}{len(v):>6}{okpct:>6.1f}%{pct(v,50):>8.0f}{pct(v,90):>8.0f}"
               f"{pct(v,99):>8.0f}{max(v):>8.0f}")
     print("\nstatus HTTP por endpoint:")
     for nome in sorted(status):
