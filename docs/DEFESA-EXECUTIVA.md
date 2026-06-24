@@ -241,17 +241,48 @@ Nossa arquitetura foi desenhada com total atenção aos requisitos regulatórios
 
 ## 7. NARRATIVA DE VENDAS EXECUTIVA (PITCH PARA O BOARD)
 
-### Problema Atual e seu Impacto
-"Senhores membros da banca e executivos da mesa: hoje, quando um cliente sofre um acidente com seu automóvel, ele se depara com um momento estressante e confuso. Ele envia uma enxurrada de PDFs, fotos e laudos para a seguradora. Do outro lado da linha, analistas sobrecarregados gastam uma hora por sinistro digitando informações, comparando placas manualmente e abrindo fotos em telas separadas. 
+### 7.1 O Gancho de 30 Segundos (Elevator Pitch Geral)
+"Imagine uma seguradora onde o cliente sofre um acidente às 22h, faz o upload das fotos e documentos pelo celular e, antes de colocar o telefone na mesa, recebe a notificação de pré-aprovação do seu sinistro com o orçamento validado. Sem ligações de horas, sem envio de e-mails perdidos, sem espera de 5 dias úteis. Do lado de dentro, a operação processou esse sinistro por meros 38 centavos de real, sem que um único funcionário precisasse digitar um CPF ou abrir um PDF de nota fiscal. Isso não é um plano para o futuro; é o **DocuSmart Intelligence** funcionando em produção hoje na AWS."
 
-O resultado disso? Um cliente insatisfeito esperando semanas por um retorno, custos operacionais que drenam R$ 154.000,00 por mês em digitação mecânica e uma operação engessada, incapaz de escalar em momentos críticos."
+### 7.2 O Discurso Direcionado por Persona (C-Level & Investidores)
 
-### Nossa Solução: DocuSmart Intelligence
-"Apresentamos o **DocuSmart Intelligence**: uma plataforma inteligente de automação de documentos focada em seguros automotivos. A nossa solução recebe os documentos digitais diretamente do cliente, realiza uma triagem automatizada com inteligência artificial, valida e cruza os dados com a apólice, e toma decisões preliminares de aprovação de forma instantânea. 
+#### 🎯 Para o CEO (Chief Executive Officer) — Diferenciação e Market Share
+> **Foco:** Vantagem Competitiva, NPS (Net Promoter Score) e Retenção.
+*   **A Narrativa:** "No mercado de seguros atual, a velocidade de liquidação de sinistros é o principal driver de retenção de clientes. Concorrentes tradicionais demoram dias porque dependem de processos analógicos e sistemas legados. O DocuSmart reposiciona nossa marca como líder em inovação digital. Reduzindo nosso tempo de triagem de 60 para menos de 2 minutos, nós não estamos apenas otimizando processos, estamos elevando o nosso NPS, reduzindo o churn de clientes em momentos críticos e criando um diferencial competitivo impossível de ser ignorado pela concorrência. Estamos comprando a fidelidade do cliente com agilidade."
 
-Paralelamente, disponibilizamos um agente SAC inteligente capaz de responder a dúvidas complexas sobre o sinistro ou as cláusulas do contrato em linguagem natural, direto no WhatsApp ou portal web, com respostas precisas em menos de 15 segundos."
+#### 📊 Para o CFO (Chief Financial Officer) — Redução de Custos e Margem de Lucro
+> **Foco:** ROI (Retorno sobre Investimento), CAPEX vs. OPEX e Payback.
+*   **A Narrativa:** "A triagem manual de documentos nos custa hoje R$ 154.000,00 mensais para processar 4.400 sinistros. Com o DocuSmart, o custo total AWS para essa mesma volumetria cai para cerca de R$ 1.375,00/mês. Estamos falando de uma **redução direta de 99,1% no custo marginal de processamento**. Por ser uma arquitetura 100% serverless, transformamos o custo de infraestrutura fixa em custo puramente variável (OPEX). Não há desperdício de servidores rodando ociosos. O investimento inicial de desenvolvimento se paga em **apenas uma semana** de operação. Cada sinistro processado a partir daí gera margem líquida direta para o nosso balanço."
 
+#### ⚙️ Para o COO (Chief Operating Officer) — Capacidade de Escala e Eficiência Operacional
+> **Foco:** Eliminação de Gargalos, SLA (Service Level Agreement) e Escalabilidade.
+*   **A Narrativa:** "Nossa operação atual é altamente vulnerável a flutuações de demanda. Em temporadas de grandes enchentes ou tempestades, o volume de sinistros triplica e nossa equipe vira um gargalo, estourando o SLA e gerando filas enormes. O DocuSmart traz capacidade elástica ilimitada. Se passarmos de 200 sinistros para 20.000 sinistros por dia, o sistema escala automaticamente via AWS Lambda e DynamoDB, sem necessidade de contratação emergencial de staff ou pagamento de horas extras. O time de analistas sêniores é liberado de tarefas mecânicas de digitação para atuar estritamente como auditores de exceções (casos de baixa confiança ou valores acima da alçada), aumentando a eficiência operacional global da companhia."
+
+#### 🔒 Para o CRO (Chief Risk Officer) — Fraude, LGPD e Compliance
+> **Foco:** Mitigação de Riscos, Vazamento de Dados e Fraude Interna.
+*   **A Narrativa:** "O erro humano é a maior porta de entrada para fraudes e vazamento de dados confidenciais. Ao cruzar dados estruturados via Gates automatizados de forma determinística (CPF, placa do veículo, validade da apólice, valor de referência do orçamento), mitigamos a ocorrência de pagamentos indevidos causados por fadiga do analista. Em termos de privacidade de dados, somos 'LGPD-compliant' por design. O texto bruto extraído nunca é gravado no banco de dados e temos um endpoint robusto de `DELETE` que expira e limpa fisicamente todos os vestígios de dados pessoais a pedido do titular (Art. 18). Mitigamos multas regulatórias e protegemos nossa governança."
+
+#### 💻 Para o CTO (Chief Technology Officer) — Arquitetura Limpa e Time-to-Market
+> **Foco:** Simplicidade de Integração, Sem Lock-in e Facilidade de Manutenção.
+*   **A Narrativa:** "Não estamos propondo um monolito pesado ou uma solução proprietária engessada. Nossa arquitetura é modular, limpa e moderna, utilizando **AWS Step Functions** para orquestrar serviços serverless nativos e o inovador **AWS Strands Agents SDK** para orquestração de agentes de IA. Nossas APIs expõem contratos limpos que se integram facilmente com nossos sistemas de legado atuais via endpoints HTTP protegidos no API Gateway. O controle do prompt do sistema e das regras de gating está em nossas mãos, permitindo evoluções ágeis (como adicionar novos tipos de documentos) em horas, e não meses. Zero servidores para gerenciar, zero sistemas operacionais para patchear."
+
+### 7.3 Estrutura Visual da Jornada de Valor
+```text
+[ ENTRADA DO CLIENTE ] 
+       │
+       ▼ (Tempo: 15s)
+[ INTAKE AUTOMÁTICO ] ──> Validação rápida e geração de UUID de Protocolo
+       │
+       ▼ (Tempo: 60s)
+[ PIPELINE DE IA (IDP) ] ──> Textract (OCR) + Rekognition (Visão) + Claude Haiku (Lógica)
+       │
+       ├─ Confiança ≥ 80% e Valor ≤ Limiar ──> [ APROVAÇÃO AUTOMÁTICA EM 2 MIN ]
+       │
+       └─ Confiança < 80% ou Valor > Limiar ──> [ ENCAMINHAMENTO P/ ANALISTA DE EXCEÇÃO ]
 ```
+
+### 7.4 Diferenciais Competitivos da Solução
+```text
 +-------------------------------------------------------------+
 |                DOCUSMART OPERATIONAL ROI                    |
 +----------------------+--------------------+-----------------+
@@ -264,12 +295,9 @@ Paralelamente, disponibilizamos um agente SAC inteligente capaz de responder a d
 | Escala em Pico       | Limitada a staff   | Ilimitada (AWS) |
 +----------------------+--------------------+-----------------+
 ```
-
-### Economia Gerada e ROI
-"A transformação é imediata. Ao cortar o processamento manual para menos de 2 minutos por sinistro, **reduzimos os custos de operação do processo em 99%**. Para uma volumetria moderada, isso significa injetar mais de R$ 150.000,00 de volta na margem operacional da seguradora, todos os meses. O retorno sobre o investimento (ROI) de desenvolvimento do projeto é alcançado em **apenas uma semana** de operação."
-
-### Diferenciais Competitivos
-"Nossa arquitetura não utiliza servidores servidores virtuais ligados 24 horas por dia. Somos 100% serverless, utilizando o **AWS Step Functions** para orquestrar serviços líderes em IA como o **Amazon Textract** e **Amazon Bedrock (Claude Haiku 4.5)**. Nossa precisão em extração de notas fiscais e documentos de identidade alcançou mais de 98% nos testes com dados reais. Além de sermos ágeis, estamos em total conformidade com a LGPD desde a primeira linha de código, permitindo a exclusão definitiva dos dados pessoais a qualquer momento com apenas um clique."
+*   **Adaptabilidade Multimodal:** Ao contrário de RPAs tradicionais que falham ao menor desalinhamento de scanner, nossa IA entende o documento de forma contextual.
+*   **Modelo Híbrido SAC RAG:** Atendimento ao cliente de alta fidelidade que lê o status direto do banco de dados relacional NoSQL e, se necessário, busca regras contratuais em arquivos PDF brutos via base de conhecimento.
+*   **Soberania dos Dados:** Os dados de nossos clientes permanecem sob nosso controle direto na conta AWS da empresa, em vez de serem enviados para plataformas de terceiros de SaaS não auditáveis.
 
 ---
 
