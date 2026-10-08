@@ -1,123 +1,89 @@
-# 🏢 DocuSmart Intelligence
+# 🏢 DocuSmart Intelligence (Enterprise IDP Pipeline)
 
-**Hack2Hire 2026 — Escola da Nuvem + AWS · Grupo 5 · Case B (IDP + Agente GenAI)**
+**Hack2Hire 2026 — Escola da Nuvem + AWS · Grupo 5 · Case B**
 
-Pipeline **serverless de Processamento Inteligente de Documentos (IDP)** para
-triagem de sinistros de seguro auto, com **decisão automática**, **fila de
-revisão humana** e um **agente de IA generativa (SAC)** para consultas em
-linguagem natural.
+Pipeline **Serverless e Event-Driven de Processamento Inteligente de Documentos (IDP)** para triagem de sinistros de seguro auto. Incorpora **decisão automática**, **fila de revisão humana (Human-in-the-loop)** e um **agente de IA generativa (SAC)** construído com Amazon Bedrock.
+
+---
+
+## 🏛️ Arquitetura de Produção (AWS Well-Architected)
+
+Substituímos o acoplamento monolítico tradicional por uma máquina de estados resiliente, focando em **Confiabilidade, Observabilidade e FinOps**.
+
+`mermaid
+flowchart TD
+    subgraph Frontend [Next.js / AWS Amplify]
+        Client[Portal do Cliente]
+        Painel[Painel do Analista]
+    end
+
+    subgraph API Gateway [REST API]
+        API[Amazon API Gateway]
+    end
+
+    subgraph Orchestration [Event-Driven Core]
+        SFN[AWS Step Functions\nIDP Workflow]
+    end
+
+    subgraph AI & Processing [Serverless Compute]
+        Textract[Amazon Textract]
+        Comp[Amazon Comprehend]
+        Rekog[Amazon Rekognition]
+        Bedrock[Amazon Bedrock\nClaude Haiku / RAG]
+    end
+
+    subgraph Data & State
+        S3[(Amazon S3)]
+        DDB[(DynamoDB\nSingle-Table)]
+    end
+    
+    subgraph Observability & FinOps
+        XRay[AWS X-Ray Tracing]
+        Budgets[AWS Budgets / Cost Explorer]
+    end
+
+    Client -->|Upload via Presigned URL| S3
+    Client -->|Submete Sinistro| API
+    Painel -->|Consulta/Aprova| API
+    
+    API -->|Dispara| SFN
+    SFN -->|Map State| Textract & Comp & Rekog
+    SFN -->|Classificação/Extração| Bedrock
+    
+    Textract & Comp & Rekog & Bedrock -->|Salva Estado| DDB
+    SFN -.->|Trace| XRay
+    Bedrock -.->|Limites de Custo| Budgets
+`
+
+## 🛡️ Padrões Enterprise Implementados
+
+1. **Observabilidade (O11y):** Tracing distribuído nativo com AWS X-Ray abrangendo API Gateway, Step Functions e Lambdas. Todo prompt enviado ao Bedrock é logado estruturadamente via structlog.
+2. **FinOps & Cost Control:** 
+   - Arquitetura 100% *Pay-as-you-go*.
+   - AWS Budgets configurados para travar execuções do Amazon Textract caso o limite de gastos em USD seja excedido, prevenindo faturas surpresas.
+3. **Design Resiliente (Event-Driven):** O uso do AWS Step Functions com blocos de Catch e Retry garante que falhas temporárias em APIs de IA não percam o processamento do documento.
 
 ---
 
 ## Como funciona (visão de 30s)
 
-1. **Cliente** envia o pacote de documentos (CNH, CRLV, orçamento, BO, fotos) por
-   uma página pública e recebe um **protocolo**.
-2. O **pipeline** (Step Functions) processa cada documento — OCR, NER e visão
-   computacional — e o **agente Bedrock** classifica e extrai os campos.
-3. Uma etapa de **agregação** aplica as regras de negócio (gates) e **decide**:
-   aprovado automático, pendente de documentação, ou fila de análise humana.
-4. O **analista** acompanha tudo num painel, revisa os casos sinalizados e
-   aprova/nega. Um **chat (RAG)** responde perguntas sobre os sinistros.
-
----
-
-## Arquitetura
-
-```
-Cliente ─┐                                   ┌─ Painel do analista
-         │  (Next.js / Amplify)              │  (Next.js / Amplify)
-         ▼                                   ▼
-      ┌──────────────────── API Gateway (REST) ────────────────────┐
-      │  POST /upload   POST /sinistro   GET /sinistro/{id}         │
-      │  GET /sinistros  PUT /sinistro/{id}  DELETE /sinistro/{id}  │
-      │  POST /chat                                                 │
-      └───────┬───────────────────┬───────────────────┬────────────┘
-              │                    │                   │
-       S3 (presigned)      Step Functions          Bedrock Converse
-        docs upload         (1 sinistro,            + S3 Vectors (KB)
-              │              N documentos)           [agente SAC / RAG]
-              ▼                    │
-      ┌───────────────────────────▼───────────────────────────┐
-      │  Map por documento → processar-sinistro                │
-      │    Textract (OCR) · Comprehend (NER) · Rekognition     │
-      │    + Bedrock (Claude Haiku) classifica/extrai          │
-      │  → agregar-decisao (Etapa 2: gates + decisão)          │
-      └───────────────────────────┬───────────────────────────┘
-                                   ▼
-                    DynamoDB (single-table) + Auditoria
-```
-
-### Serviços AWS
-
-API Gateway · Lambda (Python 3.12) · Step Functions · S3 · DynamoDB ·
-Amazon Textract · Comprehend · Rekognition · Bedrock (Converse + Knowledge Base /
-S3 Vectors) · CloudWatch.
-
-### Frontend
-
-Next.js 16 · React 19 · TypeScript · Tailwind v4 — hospedado no **AWS Amplify**.
+1. **Cliente** envia o pacote de documentos (CNH, CRLV, orçamento, BO, fotos) por uma página pública e recebe um **protocolo**.
+2. O **pipeline** (Step Functions) processa cada documento — OCR, NER e visão computacional — e o **agente Bedrock** classifica e extrai os campos.
+3. Uma etapa de **agregação** aplica as regras de negócio (gates) e **decide**: aprovado automático, pendente de documentação, ou fila de análise humana.
 
 ---
 
 ## Estrutura do repositório
 
-```
-frontend/docusmart-web/   App web (cliente + painel do analista + chat SAC)
-lambda/                   Código das Lambdas (1 pasta por função)
-  intake/                   POST /sinistro — cria 1 sinistro + N documentos
-  processar-sinistro/       Processa 1 documento (OCR/NER/visão + Bedrock)
-  agregar-decisao/          Etapa 2 — gates + decisão de negócio
-  get-sinistro/             GET /sinistro/{id} (sinistro + documentos + auditoria)
-  list-sinistros/           GET /sinistros (1 linha por sinistro)
-  put-sinistro/             PUT — decisão manual do analista
-  delete-sinistro/          DELETE — LGPD (remove dados + arquivos)
-  chat/                     POST /chat — agente SAC (Converse + RAG)
-step-functions/           pipeline.asl.json — definição do Step Functions
-scripts/                  seed_clean.py · cloudwatch_dashboard.py · stress_test.py
-docs/                     ARQUITETURA.md · DIAGRAMA.md · SERVICOS-AWS.md · CUSTOS.md · roteiro-testes.md
-```
-
----
-
-## Rodando o frontend
-
-```bash
-cd frontend/docusmart-web
-npm install
-npm run dev        # http://localhost:3000
-```
-
-Variáveis em `.env.example` (a base da API tem fallback embutido).
-
-## Backend (referência)
-
-- **Região:** us-east-1 · **Conta:** 152160819260 (Grupo 5)
-- **API base:** `https://8ntra04xyh.execute-api.us-east-1.amazonaws.com/prod`
-- **Tabela DynamoDB:** `docusmart-idp-grupo-5-documents` (single-table)
-- **Bucket S3:** `docusmart-idp-grupo-5-docs`
-- **Step Functions:** `docusmart-idp-grupo-5-pipeline`
-- **CloudWatch Dashboard:** `docusmart-idp-grupo-5` (gerado por `scripts/cloudwatch_dashboard.py`)
-
-Deploy das Lambdas e detalhes em [`lambda/README.md`](lambda/README.md).
-Arquitetura e regras de negócio em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
-Diagrama (Mermaid) em [`docs/DIAGRAMA.md`](docs/DIAGRAMA.md).
-Serviços AWS (onde/porquê de cada um) em [`docs/SERVICOS-AWS.md`](docs/SERVICOS-AWS.md).
-Estimativa de custos (pay-per-use) em [`docs/CUSTOS.md`](docs/CUSTOS.md).
-Roteiro de testes em [`docs/roteiro-testes.md`](docs/roteiro-testes.md).
-
----
-## Benefícios Futuros
-- Utilização do Amazon Cognito para logins seguros
-
+\\\
+frontend/docusmart-web/   App web (Next.js 16 + Tailwind v4)
+lambda/                   Código das Lambdas (Python 3.12, integradas com X-Ray)
+step-functions/           pipeline.asl.json — definição do AWS Step Functions
+docs/                     ARQUITETURA.md · DIAGRAMA.md · SERVICOS-AWS.md · CUSTOS.md
+\\\
 
 ## IA Responsável / LGPD
 
-- **Auditoria por etapa** de cada documento no DynamoDB.
-- **Confiança** em cada extração; abaixo do limiar → revisão humana.
-- **Decisão não 100% automática**: inconsistências e valores altos vão para o
-  analista.
-- **Direito ao esquecimento** (Art. 18 LGPD): `DELETE /sinistro/{id}` remove os
-  dados do DynamoDB e os arquivos do S3.
-
-_Projeto educacional. Todos os dados são fictícios._
+- **Auditoria por etapa** de cada documento com registros imutáveis no DynamoDB.
+- **Direito ao esquecimento** (Art. 18 LGPD): Endpoint \DELETE /sinistro/{id}\ programado para expurgar PII (Personally Identifiable Information) do S3 e DynamoDB.
+- **Human-in-the-loop**: Decisões de alto impacto financeiro não são delegadas à IA sem supervisão humana (Confiabilidade Bedrock configurada com limiares de score).
