@@ -1,4 +1,4 @@
-# 🏢 DocuSmart Intelligence (Enterprise IDP Pipeline)
+# DocuSmart Intelligence (Enterprise IDP Pipeline)
 
 **Hack2Hire 2026 — Escola da Nuvem + AWS · Grupo 5 · Case B**
 
@@ -6,7 +6,7 @@ Pipeline **Serverless e Event-Driven de Processamento Inteligente de Documentos 
 
 ---
 
-## 🏛️ Arquitetura de Produção (AWS Well-Architected)
+## Arquitetura de Produção (AWS Well-Architected)
 
 Substituímos o acoplamento monolítico tradicional por uma máquina de estados resiliente, focando em **Confiabilidade, Observabilidade e FinOps**.
 
@@ -55,7 +55,7 @@ flowchart TD
     Bedrock -.->|Limites de Custo| Budgets
 `
 
-## 🛡️ Padrões Enterprise Implementados
+## Padrões Enterprise Implementados
 
 1. **Observabilidade (O11y):** Tracing distribuído nativo com AWS X-Ray abrangendo API Gateway, Step Functions e Lambdas. Todo prompt enviado ao Bedrock é logado estruturadamente via structlog.
 2. **FinOps & Cost Control:** 
