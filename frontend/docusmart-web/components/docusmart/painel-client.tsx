@@ -13,9 +13,9 @@ import React from 'react';
 import PainelGraficos from '@/components/docusmart/painel-graficos';
 import StatusBadge from '@/components/docusmart/status-badge';
 import { APP_ROUTES } from '@/constants/app-routes';
+import { listarSinistrosApi, type SinistroApi } from '@/lib/docusmart/api';
 import { TIPO_SINISTRO } from '@/lib/docusmart/constants';
 import { formatBRL, formatData } from '@/lib/docusmart/format';
-import { listarSinistrosApi, type SinistroApi } from '@/lib/docusmart/api';
 import { cn } from '@/lib/utils';
 
 const REQUER_ATENCAO = ['EM_ANALISE', 'PENDENTE_DOCUMENTACAO', 'EM_PROCESSAMENTO'];

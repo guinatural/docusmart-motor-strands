@@ -21,18 +21,18 @@ import StatusBadge from '@/components/docusmart/status-badge';
 import Button from '@/components/ui/button';
 import { APP_ROUTES } from '@/constants/app-routes';
 import {
-  STATUS_DOC,
-  TIPO_SINISTRO,
-  sinistroEmProcessamento,
-} from '@/lib/docusmart/constants';
-import { formatBRL, formatCpf, formatData } from '@/lib/docusmart/format';
-import {
   confiancaPct,
   decidirSinistroApi,
   obterSinistro,
   type SinistroDetalhe as Detalhe,
   type Validacoes,
 } from '@/lib/docusmart/api';
+import {
+  sinistroEmProcessamento,
+  STATUS_DOC,
+  TIPO_SINISTRO,
+} from '@/lib/docusmart/constants';
+import { formatBRL, formatCpf, formatData } from '@/lib/docusmart/format';
 import { notifyError, notifySuccess } from '@/lib/ui/notifications';
 import { cn } from '@/lib/utils';
 

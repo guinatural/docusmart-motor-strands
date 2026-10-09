@@ -1,5 +1,5 @@
-import { TIPO_SINISTRO } from '@/lib/docusmart/constants';
 import type { SinistroApi } from '@/lib/docusmart/api';
+import { TIPO_SINISTRO } from '@/lib/docusmart/constants';
 
 // Cores por status (hex direto, usado no SVG e nas legendas)
 const COR_STATUS: Record<string, string> = {
@@ -37,31 +37,33 @@ function Card({
 function Donut({ data, total }: { data: { cor: string; valor: number }[]; total: number }) {
   const r = 42;
   const c = 2 * Math.PI * r;
-  let acc = 0;
+  const segments = data
+    .filter((d) => d.valor > 0)
+    .reduce<{ cor: string; len: number; offset: number }[]>((result, d) => {
+      const previous = result.at(-1);
+      const len = total ? (d.valor / total) * c : 0;
+      return [
+        ...result,
+        { cor: d.cor, len, offset: previous ? previous.offset + previous.len : 0 },
+      ];
+    }, []);
   return (
     <div className="relative size-36 shrink-0">
       <svg viewBox="0 0 100 100" className="size-full -rotate-90">
         <circle cx="50" cy="50" r={r} fill="none" strokeWidth="12" className="stroke-foreground/10" />
-        {data
-          .filter((d) => d.valor > 0)
-          .map((d, i) => {
-            const len = total ? (d.valor / total) * c : 0;
-            const el = (
-              <circle
-                key={i}
-                cx="50"
-                cy="50"
-                r={r}
-                fill="none"
-                stroke={d.cor}
-                strokeWidth="12"
-                strokeDasharray={`${len} ${c - len}`}
-                strokeDashoffset={-acc}
-              />
-            );
-            acc += len;
-            return el;
-          })}
+        {segments.map((segment, i) => (
+          <circle
+            key={i}
+            cx="50"
+            cy="50"
+            r={r}
+            fill="none"
+            stroke={segment.cor}
+            strokeWidth="12"
+            strokeDasharray={`${segment.len} ${c - segment.len}`}
+            strokeDashoffset={-segment.offset}
+          />
+        ))}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-foreground text-2xl font-semibold">{total}</span>
