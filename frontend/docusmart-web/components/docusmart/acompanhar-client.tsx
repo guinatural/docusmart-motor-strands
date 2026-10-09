@@ -9,9 +9,12 @@ import OperacoesTimeline from '@/components/docusmart/operacoes-timeline';
 import StatusBadge from '@/components/docusmart/status-badge';
 import Button from '@/components/ui/button';
 import InputWithLabel from '@/components/ui/input';
-import { TIPO_SINISTRO, sinistroEmProcessamento } from '@/lib/docusmart/constants';
-import { formatData } from '@/lib/docusmart/format';
 import { obterSinistro, type SinistroDetalhe } from '@/lib/docusmart/api';
+import {
+  sinistroEmProcessamento,
+  TIPO_SINISTRO,
+} from '@/lib/docusmart/constants';
+import { formatData } from '@/lib/docusmart/format';
 
 const POLL_MS = 5000;
 

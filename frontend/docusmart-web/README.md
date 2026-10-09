@@ -13,9 +13,25 @@ fictícios.
 ## Rodando
 
 ```bash
-npm install
+npm ci
 npm run dev   # http://localhost:3000
 ```
+
+## Validação
+
+Execute na pasta `frontend/docusmart-web`:
+
+```bash
+npm ci
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
+
+Os testes unitários usam o runner nativo do Node via `tsx` e não chamam a API.
+O workflow de CI executa essas verificações junto dos testes dos handlers Lambda;
+as chamadas AWS dos handlers são substituídas por mocks.
 
 ## Configuração
 

@@ -82,6 +82,17 @@ step-functions/           pipeline.asl.json — definição do AWS Step Function
 docs/                     ARQUITETURA.md · DIAGRAMA.md · SERVICOS-AWS.md · CUSTOS.md
 \\\
 
+## Validação local e CI
+
+O workflow `.github/workflows/validation.yml` executa lint, verificação de tipos,
+testes unitários e build do frontend, além de testes dos handlers Lambda com
+serviços AWS mockados. Não são necessárias credenciais AWS.
+
+Para executar localmente, use `npm ci`, `npm run lint`, `npm run typecheck`,
+`npm test` e `npm run build` em `frontend/docusmart-web`. Na raiz, instale as
+dependências de teste com `python -m pip install -r tests/requirements.txt` e
+execute `python -m unittest discover -s tests -p "test_*.py" -v`.
+
 ## IA Responsável / LGPD
 
 - **Auditoria por etapa** de cada documento com registros imutáveis no DynamoDB.

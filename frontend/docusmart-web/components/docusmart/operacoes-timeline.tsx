@@ -1,6 +1,6 @@
+import type { OperacaoApi } from '@/lib/docusmart/api';
 import { ETAPA_OPERACAO } from '@/lib/docusmart/constants';
 import { formatDataHora } from '@/lib/docusmart/format';
-import type { OperacaoApi } from '@/lib/docusmart/api';
 
 function rotuloEtapa(etapa?: string): string {
   if (!etapa) return 'Operação';

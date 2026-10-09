@@ -9,18 +9,18 @@ import {
 import Link from 'next/link';
 import React from 'react';
 
-import Button from '@/components/ui/button';
-import InputWithLabel from '@/components/ui/input';
-import { APP_ROUTES } from '@/constants/app-routes';
 import CopyButton from '@/components/docusmart/copy-button';
 import DatePicker from '@/components/docusmart/date-picker';
 import StatusBadge from '@/components/docusmart/status-badge';
-import { TIPO_SINISTRO } from '@/lib/docusmart/constants';
+import Button from '@/components/ui/button';
+import InputWithLabel from '@/components/ui/input';
+import { APP_ROUTES } from '@/constants/app-routes';
 import {
   criarSinistroApi,
-  uploadPacote,
   type IntakeResposta,
+  uploadPacote,
 } from '@/lib/docusmart/api';
+import { TIPO_SINISTRO } from '@/lib/docusmart/constants';
 import type { TipoSinistro } from '@/lib/docusmart/types';
 import { notifyError } from '@/lib/ui/notifications';
 import { cn } from '@/lib/utils';
